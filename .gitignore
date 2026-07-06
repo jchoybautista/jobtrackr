@@ -20,3 +20,6 @@ coverage/
 
 # superpowers brainstorming artifacts
 .superpowers/
+
+# typescript incremental build
+*.tsbuildinfo
