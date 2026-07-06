@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --color-canvas: #fdfdfd;
+  --color-surface: #ffffff;
+  --color-sunken: #f5f5f5;
+  --color-ink: #1a1a1a;
+  --color-ink-2: #595959;
+  --color-ink-3: #6b6b6b;
+  --color-line: #e5e5e5;
+  --color-line-2: #f0f0f0;
+  --color-danger: #c4544f;
+  --color-danger-bg: #fdecec;
+  --color-success: #3e7a50;
+  --color-success-bg: #eef7f0;
+  --color-warn: #8a6d2b;
+  --color-warn-bg: #fff7e8;
+  --color-warn-line: #f5e5c0;
+}
+
+:root { color-scheme: light; }
+/* dark mode later: [data-theme="dark"] { redefine the same tokens } */
+
+body { background: var(--color-canvas); color: var(--color-ink); -webkit-font-smoothing: antialiased; }
+
+:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 4px; }
+
+.skip-link { position: absolute; left: -9999px; top: 8px; z-index: 100; }
+.skip-link:focus { left: 8px; background: var(--color-ink); color: #fff; padding: 8px 16px; border-radius: 9999px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
