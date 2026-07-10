@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { AppShell } from "@/components/shell/AppShell";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${jakarta.variable} font-sans`}>
         <a href="#main" className="skip-link">Skip to main content</a>
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
