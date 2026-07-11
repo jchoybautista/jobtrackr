@@ -15,7 +15,13 @@ export function Dialog({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (open && !el.open) el.showModal();
+    if (open && !el.open) {
+      el.showModal();
+      // Native showModal() moves focus to the first focusable descendant — the
+      // header "Close dialog" button — which defeats a child's autoFocus. Redirect
+      // focus to the primary field (input/textarea/select) if the content has one.
+      el.querySelector<HTMLElement>("[autofocus], input, textarea, select")?.focus();
+    }
     if (!open && el.open) el.close();
   }, [open]);
 
