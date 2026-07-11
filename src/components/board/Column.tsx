@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import type { Application, Interview, Stage, Tag } from "@/lib/types";
+import type { Application, Interview, PaletteKey, Stage, Tag } from "@/lib/types";
 import { columnTints, mixWithWhite, PALETTE } from "@/lib/palette";
+import { useApp } from "@/lib/store";
 import { JobCard, type JobCardProps } from "./JobCard";
+import { ColorPicker } from "./ColorPicker";
+import { ColumnMenu } from "./ColumnMenu";
 
 export interface ColumnProps {
   stage: Stage;
@@ -38,16 +42,33 @@ export function Column({
 }: ColumnProps) {
   const tints = columnTints(stage.color);
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const recolorStage = useApp((s) => s.recolorStage);
 
   return (
     <section aria-label={`${stage.name} column, ${apps.length} applications`}
       className="flex w-[248px] shrink-0 snap-start flex-col">
-      <header className="mb-2.5 flex items-center gap-2 px-0.5">
-        <span className="h-2.5 w-2.5 rounded-full" style={{ background: tints.dot }} aria-hidden />
+      <header className="relative mb-2.5 flex items-center gap-2 px-0.5">
+        <button
+          type="button"
+          aria-label={`Change ${stage.name} column color`}
+          aria-expanded={pickerOpen}
+          onClick={() => setPickerOpen((v) => !v)}
+          className="h-2.5 w-2.5 rounded-full transition-transform hover:scale-125"
+          style={{ background: tints.dot }}
+        />
+        {pickerOpen && (
+          <ColorPicker
+            value={stage.color}
+            onChange={(c: PaletteKey) => void recolorStage(stage.id, c)}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
         <h2 className="text-[13px] font-bold">{stage.name}</h2>
         <span className="rounded-full bg-sunken px-2 py-0.5 text-[10px] font-semibold text-ink-3">
           {String(apps.length).padStart(2, "0")}
         </span>
+        <ColumnMenu stage={stage} />
       </header>
       <SortableContext items={apps.map((a) => a.id)} strategy={verticalListSortingStrategy}>
         <div
