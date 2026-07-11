@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Plus, SlidersHorizontal, Search } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { computeNudges, dueReminders, filterApplications, upcomingInterviews } from "@/lib/selectors";
@@ -8,10 +8,12 @@ import type { Interview } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Column } from "./Column";
 import { DragBoard } from "./DragBoard";
+import { AddJobDialog } from "./AddJobDialog";
 
 export function BoardPage() {
   const s = useApp();
   const nowIso = new Date().toISOString();
+  const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(
     () => filterApplications(s.applications, s.filters),
@@ -61,7 +63,7 @@ export function BoardPage() {
           <Button variant="secondary">
             <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filters
           </Button>
-          <Button>
+          <Button onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4" aria-hidden /> Add job
           </Button>
         </div>
@@ -90,6 +92,8 @@ export function BoardPage() {
           ))}
         </div>
       </DragBoard>
+
+      <AddJobDialog open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   );
 }
