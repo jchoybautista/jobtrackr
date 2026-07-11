@@ -23,3 +23,6 @@ coverage/
 
 # typescript incremental build
 *.tsbuildinfo
+
+# claude runtime artifacts
+.claude/scheduled_tasks.lock
