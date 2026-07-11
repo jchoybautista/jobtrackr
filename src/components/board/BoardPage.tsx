@@ -1,0 +1,92 @@
+"use client";
+
+import { useMemo } from "react";
+import { Plus, SlidersHorizontal, Search } from "lucide-react";
+import { useApp } from "@/lib/store";
+import { computeNudges, dueReminders, filterApplications, upcomingInterviews } from "@/lib/selectors";
+import type { Interview } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
+import { Column } from "./Column";
+
+export function BoardPage() {
+  const s = useApp();
+  const nowIso = new Date().toISOString();
+
+  const filtered = useMemo(
+    () => filterApplications(s.applications, s.filters),
+    [s.applications, s.filters],
+  );
+  const nudges = useMemo(
+    () => computeNudges(filtered, s.stages, s.settings.nudgeDays, nowIso),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filtered, s.stages, s.settings.nudgeDays],
+  );
+  const nextInterviewByApp = useMemo(() => {
+    const m = new Map<string, Interview>();
+    for (const i of upcomingInterviews(s.interviews, nowIso)) {
+      if (!m.has(i.applicationId)) m.set(i.applicationId, i);
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.interviews]);
+  const noteCountByApp = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const n of s.notes) m.set(n.applicationId, (m.get(n.applicationId) ?? 0) + 1);
+    return m;
+  }, [s.notes]);
+  const tagById = useMemo(() => new Map(s.tags.map((t) => [t.id, t])), [s.tags]);
+
+  const activeCount = s.applications.filter((a) => {
+    const st = s.stages.find((x) => x.id === a.stageId);
+    return st?.kind === "pipeline";
+  }).length;
+  const dueCount = dueReminders(s.reminders, nowIso).length + nudges.size;
+
+  return (
+    <div className="flex h-full flex-col px-5 pt-6 lg:px-7">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight">Board</h1>
+          <p className="text-xs text-ink-3">
+            {activeCount} active application{activeCount === 1 ? "" : "s"}
+            {dueCount > 0 && ` · ${dueCount} need${dueCount === 1 ? "s" : ""} attention`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" aria-label="Search (Cmd+K)">
+            <Search className="h-4 w-4" aria-hidden /> Search
+            <kbd className="rounded-md bg-sunken px-1.5 text-[10px] text-ink-3">⌘K</kbd>
+          </Button>
+          <Button variant="secondary">
+            <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filters
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4" aria-hidden /> Add job
+          </Button>
+        </div>
+      </div>
+
+      {s.settings.demo && (
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-surface px-4 py-2.5">
+          <p className="text-xs text-ink-2">You&rsquo;re looking at demo data — clear it when you&rsquo;re ready to track your own hunt.</p>
+          <Button variant="ghost" size="sm" onClick={() => void s.clearDemo()}>Clear demo data</Button>
+        </div>
+      )}
+
+      <div className="flex flex-1 snap-x snap-mandatory gap-4 overflow-x-auto pb-6">
+        {s.stages.map((stage) => (
+          <Column
+            key={stage.id}
+            stage={stage}
+            apps={filtered.filter((a) => a.stageId === stage.id).sort((a, b) => a.order - b.order)}
+            tagById={tagById}
+            nudges={nudges}
+            nextInterviewByApp={nextInterviewByApp}
+            noteCountByApp={noteCountByApp}
+            onCardClick={(id) => s.selectApp(id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
