@@ -14,6 +14,11 @@ out/
 build/
 coverage/
 
+# playwright
+test-results/
+playwright-report/
+.playwright/
+
 # misc
 .DS_Store
 *.log

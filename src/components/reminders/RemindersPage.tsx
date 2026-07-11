@@ -20,8 +20,6 @@ function Row({ r, due }: { r: Reminder; due: boolean }) {
   const router = useRouter();
   const app = r.applicationId ? s.applications.find((a) => a.id === r.applicationId) : null;
   const nowIso = new Date().toISOString();
-  const snooze = (days: number) =>
-    void s.snoozeReminder(r.id, new Date(Date.now() + days * DAY).toISOString());
 
   return (
     <li className={`flex flex-wrap items-center gap-3 rounded-2xl border p-4 ${
@@ -41,7 +39,8 @@ function Row({ r, due }: { r: Reminder; due: boolean }) {
       </div>
       <div className="flex items-center gap-1.5">
         {[["1d", 1], ["3d", 3], ["1w", 7]].map(([lbl, d]) => (
-          <Button key={lbl} variant="ghost" size="sm" onClick={() => snooze(d as number)}
+          <Button key={lbl} variant="ghost" size="sm"
+            onClick={() => void s.snoozeReminder(r.id, new Date(Date.now() + (d as number) * DAY).toISOString())}
             aria-label={`Snooze ${r.title} for ${lbl}`}>
             {lbl}
           </Button>

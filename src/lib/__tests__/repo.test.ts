@@ -1,6 +1,5 @@
 import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach } from "vitest";
-import { db } from "@/lib/db";
 import {
   loadAll, putStage, putApplication, putInterview, deleteApplication,
   clearAll, importSnapshot, DEFAULT_SETTINGS,
