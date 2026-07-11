@@ -7,6 +7,7 @@ import { computeNudges, dueReminders, filterApplications, upcomingInterviews } f
 import type { Interview } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Column } from "./Column";
+import { DragBoard } from "./DragBoard";
 
 export function BoardPage() {
   const s = useApp();
@@ -73,20 +74,22 @@ export function BoardPage() {
         </div>
       )}
 
-      <div className="flex flex-1 snap-x snap-mandatory gap-4 overflow-x-auto pb-6">
-        {s.stages.map((stage) => (
-          <Column
-            key={stage.id}
-            stage={stage}
-            apps={filtered.filter((a) => a.stageId === stage.id).sort((a, b) => a.order - b.order)}
-            tagById={tagById}
-            nudges={nudges}
-            nextInterviewByApp={nextInterviewByApp}
-            noteCountByApp={noteCountByApp}
-            onCardClick={(id) => s.selectApp(id)}
-          />
-        ))}
-      </div>
+      <DragBoard>
+        <div className="flex flex-1 snap-x snap-mandatory gap-4 overflow-x-auto pb-6">
+          {s.stages.map((stage) => (
+            <Column
+              key={stage.id}
+              stage={stage}
+              apps={filtered.filter((a) => a.stageId === stage.id).sort((a, b) => a.order - b.order)}
+              tagById={tagById}
+              nudges={nudges}
+              nextInterviewByApp={nextInterviewByApp}
+              noteCountByApp={noteCountByApp}
+              onCardClick={(id) => s.selectApp(id)}
+            />
+          ))}
+        </div>
+      </DragBoard>
     </div>
   );
 }

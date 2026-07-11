@@ -1,8 +1,11 @@
 "use client";
 
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import type { Application, Interview, Stage, Tag } from "@/lib/types";
-import { columnTints } from "@/lib/palette";
-import { JobCard } from "./JobCard";
+import { columnTints, mixWithWhite, PALETTE } from "@/lib/palette";
+import { JobCard, type JobCardProps } from "./JobCard";
 
 export interface ColumnProps {
   stage: Stage;
@@ -14,10 +17,28 @@ export interface ColumnProps {
   onCardClick: (id: string) => void;
 }
 
+function SortableCard(props: JobCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: props.app.id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={isDragging ? "opacity-30" : undefined}
+      {...attributes}
+      {...listeners}
+    >
+      <JobCard {...props} />
+    </div>
+  );
+}
+
 export function Column({
   stage, apps, tagById, nudges, nextInterviewByApp, noteCountByApp, onCardClick,
 }: ColumnProps) {
   const tints = columnTints(stage.color);
+  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
+
   return (
     <section aria-label={`${stage.name} column, ${apps.length} applications`}
       className="flex w-[248px] shrink-0 snap-start flex-col">
@@ -28,24 +49,33 @@ export function Column({
           {String(apps.length).padStart(2, "0")}
         </span>
       </header>
-      <div className="flex flex-1 flex-col gap-2.5">
-        {apps.map((app) => (
-          <JobCard
-            key={app.id} app={app} tints={tints}
-            tags={app.tagIds.map((t) => tagById.get(t)).filter((t): t is Tag => !!t)}
-            nudgeDays={nudges.get(app.id)}
-            interview={nextInterviewByApp.get(app.id)}
-            noteCount={noteCountByApp.get(app.id) ?? 0}
-            dimmed={stage.kind === "lost"}
-            onClick={() => onCardClick(app.id)}
-          />
-        ))}
-        {apps.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-xs text-ink-3">
-            Nothing here yet
-          </p>
-        )}
-      </div>
+      <SortableContext items={apps.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+        <div
+          ref={setNodeRef}
+          className="flex min-h-24 flex-1 flex-col gap-2.5 rounded-2xl p-1 transition-all duration-200"
+          style={isOver ? {
+            background: mixWithWhite(PALETTE[stage.color].hex, 0.18),
+            boxShadow: `0 0 0 2px ${mixWithWhite(PALETTE[stage.color].hex, 0.6)}`,
+          } : undefined}
+        >
+          {apps.map((app) => (
+            <SortableCard
+              key={app.id} app={app} tints={tints}
+              tags={app.tagIds.map((t) => tagById.get(t)).filter((t): t is Tag => !!t)}
+              nudgeDays={nudges.get(app.id)}
+              interview={nextInterviewByApp.get(app.id)}
+              noteCount={noteCountByApp.get(app.id) ?? 0}
+              dimmed={stage.kind === "lost"}
+              onClick={() => onCardClick(app.id)}
+            />
+          ))}
+          {apps.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-xs text-ink-3">
+              Drop a card here
+            </p>
+          )}
+        </div>
+      </SortableContext>
     </section>
   );
 }
