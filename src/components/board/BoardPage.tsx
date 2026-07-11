@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, SlidersHorizontal, Search } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { computeNudges, dueReminders, filterApplications, upcomingInterviews } from "@/lib/selectors";
@@ -9,11 +9,27 @@ import { Button } from "@/components/ui/Button";
 import { Column } from "./Column";
 import { DragBoard } from "./DragBoard";
 import { AddJobDialog } from "./AddJobDialog";
+import { CommandK } from "./CommandK";
+import { FiltersPopover, countActiveFilters } from "./FiltersPopover";
 
 export function BoardPage() {
   const s = useApp();
   const nowIso = new Date().toISOString();
   const [addOpen, setAddOpen] = useState(false);
+  const [kOpen, setKOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilters = countActiveFilters(s.filters);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setKOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const filtered = useMemo(
     () => filterApplications(s.applications, s.filters),
@@ -55,17 +71,21 @@ export function BoardPage() {
             {dueCount > 0 && ` · ${dueCount} need${dueCount === 1 ? "s" : ""} attention`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" aria-label="Search (Cmd+K)">
+        <div className="relative flex items-center gap-2">
+          <Button variant="secondary" aria-label="Search (Cmd+K)" onClick={() => setKOpen(true)}>
             <Search className="h-4 w-4" aria-hidden /> Search
             <kbd className="rounded-md bg-sunken px-1.5 text-[10px] text-ink-3">⌘K</kbd>
           </Button>
-          <Button variant="secondary">
+          <Button variant="secondary" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((v) => !v)}>
             <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filters
+            {activeFilters > 0 && (
+              <span className="rounded-full bg-ink px-1.5 py-0.5 text-[9px] font-bold text-white">{activeFilters}</span>
+            )}
           </Button>
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4" aria-hidden /> Add job
           </Button>
+          <FiltersPopover open={filtersOpen} onClose={() => setFiltersOpen(false)} />
         </div>
       </div>
 
@@ -94,6 +114,7 @@ export function BoardPage() {
       </DragBoard>
 
       <AddJobDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <CommandK open={kOpen} onClose={() => setKOpen(false)} onAddJob={() => setAddOpen(true)} />
     </div>
   );
 }
