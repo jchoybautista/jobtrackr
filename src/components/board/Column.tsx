@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -43,6 +43,7 @@ export function Column({
   const tints = columnTints(stage.color);
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const [pickerOpen, setPickerOpen] = useState(false);
+  const dotRef = useRef<HTMLButtonElement>(null);
   const recolorStage = useApp((s) => s.recolorStage);
 
   return (
@@ -50,6 +51,7 @@ export function Column({
       className="flex w-[248px] shrink-0 snap-start flex-col">
       <header className="relative mb-2.5 flex items-center gap-2 px-0.5">
         <button
+          ref={dotRef}
           type="button"
           aria-label={`Change ${stage.name} column color`}
           aria-expanded={pickerOpen}
@@ -62,6 +64,7 @@ export function Column({
             value={stage.color}
             onChange={(c: PaletteKey) => void recolorStage(stage.id, c)}
             onClose={() => setPickerOpen(false)}
+            excludeRef={dotRef}
           />
         )}
         <h2 className="text-[13px] font-bold">{stage.name}</h2>

@@ -1,18 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { PALETTE, PALETTE_KEYS } from "@/lib/palette";
 import type { PaletteKey } from "@/lib/types";
 
 export function ColorPicker({
-  value, onChange, onClose,
-}: { value: PaletteKey; onChange: (c: PaletteKey) => void; onClose: () => void }) {
+  value, onChange, onClose, excludeRef,
+}: {
+  value: PaletteKey;
+  onChange: (c: PaletteKey) => void;
+  onClose: () => void;
+  /** Element (e.g. the trigger button) whose clicks should not count as outside clicks. */
+  excludeRef?: RefObject<HTMLElement | null>;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+      const target = e.target as Node;
+      if (excludeRef?.current?.contains(target)) return;
+      if (ref.current && !ref.current.contains(target)) onClose();
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("mousedown", onDown);
@@ -20,7 +28,7 @@ export function ColorPicker({
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("mousedown", onDown);
     };
-  }, [onClose]);
+  }, [onClose, excludeRef]);
 
   return (
     <div
