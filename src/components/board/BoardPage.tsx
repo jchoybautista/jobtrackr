@@ -11,6 +11,7 @@ import { DragBoard } from "./DragBoard";
 import { AddJobDialog } from "./AddJobDialog";
 import { CommandK } from "./CommandK";
 import { FiltersPopover, countActiveFilters } from "./FiltersPopover";
+import { DetailPanel } from "@/components/detail/DetailPanel";
 
 export function BoardPage() {
   const s = useApp();
@@ -115,6 +116,7 @@ export function BoardPage() {
 
       <AddJobDialog open={addOpen} onClose={() => setAddOpen(false)} />
       <CommandK open={kOpen} onClose={() => setKOpen(false)} onAddJob={() => setAddOpen(true)} />
+      <DetailPanel />
     </div>
   );
 }
