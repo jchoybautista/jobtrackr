@@ -23,6 +23,14 @@ export function mixWithWhite(hex: string, weight: number): string {
   return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
 
+/** weight: fraction of the color kept; 0 = black, 1 = the color itself */
+export function mixWithBlack(hex: string, weight: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c: number) => Math.round(c * weight);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(mix);
+  return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
 export function columnTints(key: PaletteKey) {
   const hex = PALETTE[key].hex;
   return {

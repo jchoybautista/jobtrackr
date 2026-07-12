@@ -1,16 +1,17 @@
 import { pdf, renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
-import { PALETTE } from "@/lib/palette";
+import { mixWithBlack, PALETTE } from "@/lib/palette";
 import { registerCvFonts } from "./fonts";
 import { getTemplate } from "./templates";
 import type { CvDoc } from "./types";
 
 function element(cv: CvDoc, photoUrl?: string): ReactElement<DocumentProps> {
-  const accent = PALETTE[cv.accent].hex;
+  const accentSoft = PALETTE[cv.accent].hex;
   return getTemplate(cv.templateId).render({
     content: cv.content,
     sections: cv.sections,
-    accent,
+    accent: mixWithBlack(accentSoft, 0.55),
+    accentSoft,
     photoUrl: cv.showPhoto ? photoUrl : undefined,
   }) as ReactElement<DocumentProps>;
 }

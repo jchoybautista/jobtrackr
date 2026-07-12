@@ -25,10 +25,14 @@ export const baseStyles = StyleSheet.create({
 export function SectionTitle({
   children,
   accent,
+  rule,
   serif = false,
 }: {
   children: string;
+  /** Text color — pass the darkened, text-safe accent. */
   accent: string;
+  /** Border (rule) color — pass the raw pastel accent. */
+  rule: string;
   serif?: boolean;
 }) {
   return (
@@ -41,7 +45,7 @@ export function SectionTitle({
         textTransform: "uppercase",
         color: accent,
         borderBottomWidth: 0.75,
-        borderBottomColor: accent,
+        borderBottomColor: rule,
         paddingBottom: 2,
         marginBottom: 6,
         marginTop: 12,

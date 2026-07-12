@@ -16,9 +16,9 @@ function Paragraph({ children }: { children: string }) {
   return <Text style={{ marginTop: 2 }}>{children}</Text>;
 }
 
-export function ClassicTemplate({ content, accent, ...rest }: TemplateProps) {
+export function ClassicTemplate({ content, accent, accentSoft, ...rest }: TemplateProps) {
   const c = content;
-  const keys = visibleSections({ content, accent, ...rest });
+  const keys = visibleSections({ content, accent, accentSoft, ...rest });
 
   // Contact line: email · phone · location · <link labels>
   const contact: ReactNode[] = [
@@ -165,7 +165,7 @@ export function ClassicTemplate({ content, accent, ...rest }: TemplateProps) {
 
         {keys.map((key) => (
           <View key={key}>
-            <SectionTitle accent={accent}>{SECTION_LABELS[key]}</SectionTitle>
+            <SectionTitle accent={accent} rule={accentSoft}>{SECTION_LABELS[key]}</SectionTitle>
             {renderSection(key)}
           </View>
         ))}

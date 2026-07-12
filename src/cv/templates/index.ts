@@ -5,7 +5,10 @@ import { ClassicTemplate } from "./classic";
 export interface TemplateProps {
   content: CvContent;
   sections: CvSection[];
+  /** Darkened, text-safe accent — use for any accent-colored text. */
   accent: string;
+  /** Raw pastel accent — decorative rules/fills only, never text. */
+  accentSoft: string;
   photoUrl?: string;
 }
 
