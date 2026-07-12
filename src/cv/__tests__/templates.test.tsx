@@ -39,3 +39,14 @@ describe("classic template", () => {
     expect(withEmpty.subarray(0, 5).toString()).toBe("%PDF-");
   });
 });
+
+describe("modern template", () => {
+  it("renders with and without photo", async () => {
+    const buf = await renderCvBuffer(sampleCv("modern"), FONTS);
+    expect(buf.subarray(0, 5).toString()).toBe("%PDF-");
+    const cv = sampleCv("modern");
+    cv.showPhoto = true; // no photoUrl passed → template must not crash
+    const buf2 = await renderCvBuffer(cv, FONTS);
+    expect(buf2.length).toBeGreaterThan(5000);
+  });
+});

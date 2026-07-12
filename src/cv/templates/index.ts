@@ -1,6 +1,7 @@
 import type React from "react";
 import type { CvContent, CvSection, SectionKey, TemplateId } from "@/cv/types";
 import { ClassicTemplate } from "./classic";
+import { ModernTemplate } from "./modern";
 
 export interface TemplateProps {
   content: CvContent;
@@ -28,6 +29,13 @@ export const TEMPLATES: CvTemplate[] = [
     atsSafe: true,
     note: "Single column, standard headings — parses cleanly in every ATS.",
     render: ClassicTemplate,
+  },
+  {
+    id: "modern",
+    name: "Modern",
+    atsSafe: false,
+    note: "Two-column layout with photo — great for human readers; some ATS parsers struggle with columns.",
+    render: ModernTemplate,
   },
 ];
 
