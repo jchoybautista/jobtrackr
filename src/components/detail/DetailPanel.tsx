@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Trash2, X, Plus, ExternalLink } from "lucide-react";
+import { Trash2, X, Plus, ExternalLink, BellRing } from "lucide-react";
 import { useApp } from "@/lib/store";
 import type { InterviewRound, WorkMode } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +21,7 @@ export function DetailPanel() {
   const [noteDraft, setNoteDraft] = useState("");
   const [ivDraft, setIvDraft] = useState({ roundType: "phone" as InterviewRound, scheduledAt: "", locationOrLink: "" });
   const [contactDraft, setContactDraft] = useState({ name: "", role: "", email: "" });
+  const [reminderDraft, setReminderDraft] = useState({ title: "", dueAt: "" });
 
   useEffect(() => {
     if (!app) return;
@@ -38,6 +39,9 @@ export function DetailPanel() {
   const contacts = s.contacts.filter((c) => c.applicationId === app.id);
   const notes = s.notes.filter((n) => n.applicationId === app.id);
   const events = s.events.filter((e) => e.applicationId === app.id);
+  const reminders = s.reminders.filter((r) => r.applicationId === app.id && !r.done)
+    .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  const hasLink = /^https?:\/\//.test(app.url ?? "");
 
   const save = (patch: Parameters<typeof s.updateApplication>[1]) =>
     void s.updateApplication(app.id, patch);
@@ -59,7 +63,7 @@ export function DetailPanel() {
             <h2 className="truncate text-lg font-extrabold tracking-tight">{app.role}</h2>
             <p className="text-xs text-ink-3">
               {app.company}
-              {app.url && (
+              {hasLink && (
                 <a href={app.url} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center gap-0.5 font-semibold text-ink-2 underline">
                   posting <ExternalLink className="h-3 w-3" aria-hidden />
                 </a>
@@ -94,16 +98,28 @@ export function DetailPanel() {
               <div><label htmlFor="f-location" className={label}>Location</label>
                 <input id="f-location" defaultValue={app.location ?? ""} onBlur={(e) => e.target.value !== (app.location ?? "") && save({ location: e.target.value || undefined })} className={input} /></div>
               <div><label htmlFor="f-mode" className={label}>Work mode</label>
-                <select id="f-mode" value={app.workMode ?? ""} onChange={(e) => save({ workMode: (e.target.value || undefined) as WorkMode | undefined })} className={input}>
+                <select id="f-mode" value={app.workMode ?? ""} onChange={(e) => {
+                  const v = (e.target.value || undefined) as WorkMode | undefined;
+                  if (v !== app.workMode) save({ workMode: v });
+                }} className={input}>
                   <option value="">—</option><option value="remote">Remote</option>
                   <option value="hybrid">Hybrid</option><option value="onsite">Onsite</option>
                 </select></div>
               <div><label htmlFor="f-smin" className={label}>Salary min</label>
-                <input id="f-smin" type="number" defaultValue={app.salaryMin ?? ""} onBlur={(e) => save({ salaryMin: e.target.value ? Number(e.target.value) : undefined })} className={input} /></div>
+                <input id="f-smin" type="number" defaultValue={app.salaryMin ?? ""} onBlur={(e) => {
+                  const v = e.target.value ? Number(e.target.value) : undefined;
+                  if (v !== app.salaryMin) save({ salaryMin: v });
+                }} className={input} /></div>
               <div><label htmlFor="f-smax" className={label}>Salary max</label>
-                <input id="f-smax" type="number" defaultValue={app.salaryMax ?? ""} onBlur={(e) => save({ salaryMax: e.target.value ? Number(e.target.value) : undefined })} className={input} /></div>
+                <input id="f-smax" type="number" defaultValue={app.salaryMax ?? ""} onBlur={(e) => {
+                  const v = e.target.value ? Number(e.target.value) : undefined;
+                  if (v !== app.salaryMax) save({ salaryMax: v });
+                }} className={input} /></div>
               <div className="col-span-2"><label htmlFor="f-source" className={label}>Source</label>
-                <input id="f-source" defaultValue={app.source ?? ""} onBlur={(e) => save({ source: e.target.value || undefined })} className={input} /></div>
+                <input id="f-source" defaultValue={app.source ?? ""} onBlur={(e) => {
+                  const v = e.target.value || undefined;
+                  if (v !== (app.source ?? undefined)) save({ source: v });
+                }} className={input} /></div>
             </div>
           </section>
 
@@ -181,6 +197,36 @@ export function DetailPanel() {
               <div className="flex-1"><label htmlFor="c-email" className={label}>Email</label>
                 <input id="c-email" type="email" value={contactDraft.email} onChange={(e) => setContactDraft({ ...contactDraft, email: e.target.value })} className={input} /></div>
               <Button type="submit" size="sm" aria-label="Add contact"><Plus className="h-3.5 w-3.5" aria-hidden /></Button>
+            </form>
+          </section>
+
+          <section aria-label="Reminders">
+            <h3 className={sectionTitle}>Reminders</h3>
+            <ul className="mb-3 flex flex-col gap-2">
+              {reminders.map((r) => (
+                <li key={r.id} className="flex items-center gap-2 rounded-xl border border-line-2 px-3 py-2 text-sm">
+                  <BellRing className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate"><span className="font-semibold">{r.title}</span>
+                    <span className="text-ink-3"> · due {shortDate(r.dueAt)}</span></span>
+                </li>
+              ))}
+              {reminders.length === 0 && <li className="text-xs text-ink-3">No reminders yet.</li>}
+            </ul>
+            <form className="flex items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!reminderDraft.title.trim() || !reminderDraft.dueAt) return;
+                void s.addReminder({ applicationId: app.id, type: "custom",
+                  title: reminderDraft.title.trim(),
+                  dueAt: new Date(reminderDraft.dueAt).toISOString() });
+                setReminderDraft({ title: "", dueAt: "" });
+              }}>
+              <div className="flex-1"><label htmlFor="rem-title" className={label}>Reminder</label>
+                <input id="rem-title" required value={reminderDraft.title} onChange={(e) => setReminderDraft({ ...reminderDraft, title: e.target.value })}
+                  placeholder="Send thank-you note" className={input} /></div>
+              <div><label htmlFor="rem-at" className={label}>Due</label>
+                <input id="rem-at" type="datetime-local" required value={reminderDraft.dueAt} onChange={(e) => setReminderDraft({ ...reminderDraft, dueAt: e.target.value })} className={input} /></div>
+              <Button type="submit" size="sm" aria-label="Add reminder"><Plus className="h-3.5 w-3.5" aria-hidden /></Button>
             </form>
           </section>
 

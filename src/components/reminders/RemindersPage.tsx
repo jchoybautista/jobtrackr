@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation";
 import { AlarmClock, CalendarClock, BellRing, Check } from "lucide-react";
 import { useApp } from "@/lib/store";
-import { dueReminders } from "@/lib/selectors";
+import { computeNudges, dueReminders } from "@/lib/selectors";
 import { relativeDays } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
-import type { Reminder } from "@/lib/types";
+import type { Application, Reminder } from "@/lib/types";
 
 const DAY = 86_400_000;
 const typeIcon = {
@@ -54,9 +54,31 @@ function Row({ r, due }: { r: Reminder; due: boolean }) {
   );
 }
 
+function NudgeRow({ app, days }: { app: Application; days: number }) {
+  const s = useApp();
+  const router = useRouter();
+  return (
+    <li className="flex flex-wrap items-center gap-3 rounded-2xl border border-warn-line bg-warn-bg p-4">
+      <AlarmClock className="h-4 w-4 text-warn" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">Follow up with {app.company} · {app.role}</p>
+        <p className="text-xs text-ink-3">
+          {days} days silent
+          <button type="button" className="ml-2 font-semibold text-ink-2 underline"
+            onClick={() => { s.selectApp(app.id); router.push("/"); }}>
+            Open application
+          </button>
+        </p>
+      </div>
+    </li>
+  );
+}
+
 export function RemindersPage() {
   const s = useApp();
   const nowIso = new Date().toISOString();
+  const nudges = computeNudges(s.applications, s.stages, s.settings.nudgeDays, nowIso);
+  const appById = new Map(s.applications.map((a) => [a.id, a]));
   const due = dueReminders(s.reminders, nowIso);
   const dueIds = new Set(due.map((r) => r.id));
   const upcoming = s.reminders
@@ -70,8 +92,12 @@ export function RemindersPage() {
 
       <h2 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-3">Due now</h2>
       <ul className="mb-6 flex flex-col gap-2">
+        {[...nudges.entries()].map(([appId, days]) => {
+          const app = appById.get(appId);
+          return app ? <NudgeRow key={`nudge-${appId}`} app={app} days={days} /> : null;
+        })}
         {due.map((r) => <Row key={r.id} r={r} due />)}
-        {due.length === 0 && (
+        {due.length === 0 && nudges.size === 0 && (
           <li className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-3">
             Nothing due — you’re on top of it. 🎯
           </li>

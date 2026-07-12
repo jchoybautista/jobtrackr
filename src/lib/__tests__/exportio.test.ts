@@ -23,6 +23,14 @@ describe("exportio", () => {
     expect(() => fromJson('{"nope": true}')).toThrow(/invalid/i);
   });
 
+  it("fromJson rejects a non-http(s) application URL", () => {
+    const malicious: Snapshot = {
+      ...snap,
+      applications: [{ ...snap.applications[0], url: "javascript:alert(1)" }],
+    };
+    expect(() => fromJson(toJson(malicious))).toThrow(/http:\/\/ or https:\/\//);
+  });
+
   it("CSV resolves names and quotes fields containing commas/quotes", () => {
     const csv = toCsv(snap);
     const [header, row] = csv.split("\n");
