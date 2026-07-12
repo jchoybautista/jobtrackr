@@ -2,6 +2,7 @@ import { db } from "./db";
 import type {
   Stage, Application, Tag, Interview, Contact,
   ActivityEvent, NoteDoc, Reminder, SettingsDoc, Snapshot,
+  Profile, CvDoc,
 } from "./types";
 
 export const DEFAULT_SETTINGS: SettingsDoc = {
@@ -10,11 +11,11 @@ export const DEFAULT_SETTINGS: SettingsDoc = {
 
 const ALL_TABLES = [
   db.stages, db.applications, db.tags, db.interviews, db.contacts,
-  db.events, db.notes, db.reminders, db.settings,
+  db.events, db.notes, db.reminders, db.settings, db.profile, db.cvdocs,
 ];
 
 export async function loadAll(): Promise<Snapshot> {
-  const [stages, applications, tags, interviews, contacts, events, notes, reminders, settings] =
+  const [stages, applications, tags, interviews, contacts, events, notes, reminders, settings, profile, cvdocs] =
     await Promise.all([
       db.stages.orderBy("order").toArray(),
       db.applications.orderBy("order").toArray(),
@@ -25,9 +26,11 @@ export async function loadAll(): Promise<Snapshot> {
       db.notes.toArray(),
       db.reminders.toArray(),
       db.settings.get("singleton"),
+      db.profile.get("singleton"),
+      db.cvdocs.orderBy("updatedAt").reverse().toArray(),
     ]);
   return { stages, applications, tags, interviews, contacts, events, notes, reminders,
-    settings: settings ?? DEFAULT_SETTINGS };
+    settings: settings ?? DEFAULT_SETTINGS, profile: profile ?? null, cvdocs };
 }
 
 export const putStage = (x: Stage) => db.stages.put(x).then(() => {});
@@ -41,6 +44,9 @@ export const putEvent = (x: ActivityEvent) => db.events.put(x).then(() => {});
 export const putNote = (x: NoteDoc) => db.notes.put(x).then(() => {});
 export const putReminder = (x: Reminder) => db.reminders.put(x).then(() => {});
 export const putSettings = (x: SettingsDoc) => db.settings.put(x).then(() => {});
+export const putProfile = (x: Profile) => db.profile.put(x).then(() => {});
+export const putCvDoc = (x: CvDoc) => db.cvdocs.put(x).then(() => {});
+export const deleteCvDoc = (id: string) => db.cvdocs.delete(id);
 
 export const deleteStage = (id: string) => db.stages.delete(id);
 export const deleteTag = (id: string) => db.tags.delete(id);
@@ -56,6 +62,7 @@ export async function deleteApplication(id: string): Promise<void> {
       await t.where("applicationId").equals(id).delete();
     }
     await db.reminders.filter((r) => r.applicationId === id).delete();
+    await db.cvdocs.where("applicationId").equals(id).modify((c) => { delete c.applicationId; });
   });
 }
 
@@ -65,7 +72,10 @@ export async function clearAll(): Promise<void> {
   });
 }
 
-export async function importSnapshot(snap: Snapshot, mode: "replace" | "merge"): Promise<void> {
+type ImportSnapshot =
+  Omit<Snapshot, "profile" | "cvdocs"> & { profile?: Profile | null; cvdocs?: CvDoc[] };
+
+export async function importSnapshot(snap: ImportSnapshot, mode: "replace" | "merge"): Promise<void> {
   await db.transaction("rw", ALL_TABLES, async () => {
     if (mode === "replace") for (const t of ALL_TABLES) await t.clear();
     await db.stages.bulkPut(snap.stages);
@@ -77,5 +87,7 @@ export async function importSnapshot(snap: Snapshot, mode: "replace" | "merge"):
     await db.notes.bulkPut(snap.notes);
     await db.reminders.bulkPut(snap.reminders);
     await db.settings.put(snap.settings);
+    if (snap.cvdocs) await db.cvdocs.bulkPut(snap.cvdocs);
+    if (snap.profile) await db.profile.put(snap.profile);
   });
 }

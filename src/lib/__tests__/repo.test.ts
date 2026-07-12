@@ -47,6 +47,7 @@ describe("repo", () => {
       stages: [stage({ id: "sx" })], applications: [app({ id: "ax", stageId: "sx" })],
       tags: [], interviews: [], contacts: [], events: [], notes: [], reminders: [],
       settings: { ...DEFAULT_SETTINGS, nudgeDays: 10 },
+      profile: null, cvdocs: [],
     };
     await importSnapshot(incoming, "replace");
     const snap = await loadAll();

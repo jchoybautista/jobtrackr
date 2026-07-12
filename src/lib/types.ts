@@ -1,3 +1,6 @@
+import type { Profile, CvDoc } from "@/cv/types";
+export type { Profile, CvDoc } from "@/cv/types";
+
 export type PaletteKey =
   | "pink" | "peach" | "yellow" | "mint" | "sky"
   | "lavender" | "orchid" | "gray" | "sage" | "blush";
@@ -105,6 +108,8 @@ export interface Snapshot {
   notes: NoteDoc[];
   reminders: Reminder[];
   settings: SettingsDoc;
+  profile: Profile | null;
+  cvdocs: CvDoc[];
 }
 
 export interface Filters {

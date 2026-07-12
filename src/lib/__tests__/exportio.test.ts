@@ -3,7 +3,10 @@ import { toJson, fromJson, toCsv } from "@/lib/exportio";
 import { DEFAULT_SETTINGS } from "@/lib/repo";
 import type { Snapshot } from "@/lib/types";
 
-const snap: Snapshot = {
+// CV builder fields are excluded from JSON/CSV export (see exportio.ts).
+type ExportSnapshot = Omit<Snapshot, "profile" | "cvdocs">;
+
+const snap: ExportSnapshot = {
   stages: [{ id: "s1", name: "Applied", color: "pink", order: 0, kind: "pipeline" }],
   applications: [{
     id: "a1", company: 'Big "Co", Inc', role: "Engineer", tagIds: ["t1"], stageId: "s1",
@@ -24,7 +27,7 @@ describe("exportio", () => {
   });
 
   it("fromJson rejects a non-http(s) application URL", () => {
-    const malicious: Snapshot = {
+    const malicious: ExportSnapshot = {
       ...snap,
       applications: [{ ...snap.applications[0], url: "javascript:alert(1)" }],
     };

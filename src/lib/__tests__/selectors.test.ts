@@ -71,6 +71,7 @@ describe("computeMetrics", () => {
       tags: [], contacts: [], events: [], notes: [], reminders: [],
       interviews: [{ id: "iv", applicationId: "i1", roundType: "phone", scheduledAt: NOW }],
       settings: DEFAULT_SETTINGS,
+      profile: null, cvdocs: [],
     };
     const m = computeMetrics(snap, NOW);
     expect(m.total).toBe(6);

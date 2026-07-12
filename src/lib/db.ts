@@ -3,6 +3,7 @@ import type {
   Stage, Application, Tag, Interview, Contact,
   ActivityEvent, NoteDoc, Reminder, SettingsDoc,
 } from "./types";
+import type { Profile, CvDoc } from "@/cv/types";
 
 export const db = new Dexie("jobtrackr") as Dexie & {
   stages: EntityTable<Stage, "id">;
@@ -14,6 +15,8 @@ export const db = new Dexie("jobtrackr") as Dexie & {
   notes: EntityTable<NoteDoc, "id">;
   reminders: EntityTable<Reminder, "id">;
   settings: EntityTable<SettingsDoc, "id">;
+  profile: EntityTable<Profile, "id">;
+  cvdocs: EntityTable<CvDoc, "id">;
 };
 
 db.version(1).stores({
@@ -26,4 +29,18 @@ db.version(1).stores({
   notes: "id, applicationId",
   reminders: "id, dueAt, done",
   settings: "id",
+});
+
+db.version(2).stores({
+  stages: "id, order",
+  applications: "id, stageId, order, updatedAt",
+  tags: "id",
+  interviews: "id, applicationId, scheduledAt",
+  contacts: "id, applicationId",
+  events: "id, applicationId, at",
+  notes: "id, applicationId",
+  reminders: "id, dueAt, done",
+  settings: "id",
+  profile: "id",
+  cvdocs: "id, applicationId, updatedAt",
 });

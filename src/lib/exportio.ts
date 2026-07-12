@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { Snapshot } from "./types";
 
+// CV builder data (profile/cvdocs) is intentionally excluded from JSON/CSV export.
+type ExportSnapshot = Omit<Snapshot, "profile" | "cvdocs">;
+
 const paletteKey = z.enum(["pink","peach","yellow","mint","sky","lavender","orchid","gray","sage","blush"]);
 
 const snapshotSchema = z.object({
@@ -51,18 +54,18 @@ const snapshotSchema = z.object({
 
 const fileSchema = z.object({ version: z.literal(1), exportedAt: z.string(), data: snapshotSchema });
 
-export function toJson(snap: Snapshot): string {
+export function toJson(snap: ExportSnapshot): string {
   return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), data: snap }, null, 2);
 }
 
-export function fromJson(json: string): Snapshot {
+export function fromJson(json: string): ExportSnapshot {
   let raw: unknown;
   try { raw = JSON.parse(json); } catch { throw new Error("Invalid file: not valid JSON."); }
   const parsed = fileSchema.safeParse(raw);
   if (!parsed.success) {
     throw new Error(`Invalid JobTrackr export file: ${parsed.error.issues[0]?.path.join(".")} ${parsed.error.issues[0]?.message}`);
   }
-  return parsed.data.data as Snapshot;
+  return parsed.data.data as ExportSnapshot;
 }
 
 const csvCell = (v: unknown): string => {
@@ -70,7 +73,7 @@ const csvCell = (v: unknown): string => {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-export function toCsv(snap: Snapshot): string {
+export function toCsv(snap: ExportSnapshot): string {
   const stageName = new Map(snap.stages.map((s) => [s.id, s.name]));
   const tagName = new Map(snap.tags.map((t) => [t.id, t.name]));
   const header = "Company,Role,Stage,Tags,Location,Work mode,Salary min,Salary max,Currency,Source,URL,Applied at,Created at";

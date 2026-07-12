@@ -78,6 +78,7 @@ export async function seedIfEmpty(now: Date = new Date()): Promise<boolean> {
       title: "Follow up with Linear", dueAt: daysAgo(now, 1), done: false,
     }],
     settings: { ...DEFAULT_SETTINGS, demo: true },
+    profile: null, cvdocs: [],
   };
   await importSnapshot(snap, "replace");
   return true;

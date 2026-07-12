@@ -3,9 +3,11 @@
 import { create } from "zustand";
 import type {
   Application, Contact, Filters, Interview, NoteDoc, PaletteKey,
-  Reminder, SettingsDoc, Snapshot, Tag,
+  Reminder, SettingsDoc, Snapshot, Tag, Profile, CvDoc,
 } from "./types";
 import { EMPTY_FILTERS } from "./types";
+import type { CvContent, CvSection, TemplateId } from "@/cv/types";
+import { emptyCvContent, DEFAULT_SECTIONS } from "@/cv/types";
 import { newId } from "./id";
 import { moveCard, reorderStages } from "./ordering";
 import { PALETTE_KEYS } from "./palette";
@@ -46,6 +48,14 @@ interface AppState extends Snapshot {
   completeReminder(id: string): Promise<void>;
   snoozeReminder(id: string, untilIso: string): Promise<void>;
   updateSettings(patch: Partial<SettingsDoc>): Promise<void>;
+  saveProfile(content: CvContent): Promise<void>;
+  setProfilePhoto(photo: Blob | undefined): Promise<void>;
+  createCv(name: string, templateId: TemplateId): Promise<CvDoc>;
+  duplicateCv(id: string): Promise<CvDoc | null>;
+  updateCv(id: string, patch: Partial<Pick<CvDoc, "name" | "templateId" | "accent" | "showPhoto" | "applicationId">>): Promise<void>;
+  updateCvContent(id: string, patch: Partial<CvContent>): Promise<void>;
+  setCvSections(id: string, sections: CvSection[]): Promise<void>;
+  removeCv(id: string): Promise<void>;
   clearDemo(): Promise<void>;
   resetAllData(): Promise<void>;
   importData(json: string, mode: "replace" | "merge"): Promise<void>;
@@ -67,6 +77,7 @@ export const useApp = create<AppState>()((set, get) => ({
   stages: [], applications: [], tags: [], interviews: [], contacts: [],
   events: [], notes: [], reminders: [],
   settings: repo.DEFAULT_SETTINGS,
+  profile: null, cvdocs: [],
   ready: false, persistBroken: false,
   filters: EMPTY_FILTERS, selectedAppId: null,
 
@@ -78,7 +89,8 @@ export const useApp = create<AppState>()((set, get) => ({
     } catch {
       set(() => ({
         stages: DEFAULT_STAGES, tags: PRESET_TAGS,
-        settings: repo.DEFAULT_SETTINGS, ready: true, persistBroken: true,
+        settings: repo.DEFAULT_SETTINGS, profile: null, cvdocs: [],
+        ready: true, persistBroken: true,
       }));
     }
   },
@@ -120,6 +132,7 @@ export const useApp = create<AppState>()((set, get) => ({
       events: s.events.filter((e) => e.applicationId !== id),
       notes: s.notes.filter((n) => n.applicationId !== id),
       reminders: s.reminders.filter((r) => r.applicationId !== id),
+      cvdocs: s.cvdocs.map((c) => (c.applicationId === id ? { ...c, applicationId: undefined } : c)),
       selectedAppId: s.selectedAppId === id ? null : s.selectedAppId,
     }));
     await repo.deleteApplication(id).catch(() => {});
@@ -269,6 +282,75 @@ export const useApp = create<AppState>()((set, get) => ({
     const settings = { ...get().settings, ...patch };
     set(() => ({ settings }));
     await repo.putSettings(settings).catch(() => {});
+  },
+
+  async saveProfile(content) {
+    const profile: Profile = { id: "singleton", content, photo: get().profile?.photo, updatedAt: nowIso() };
+    set(() => ({ profile }));
+    await repo.putProfile(profile).catch(() => {});
+  },
+
+  async setProfilePhoto(photo) {
+    const cur = get().profile;
+    const profile: Profile = {
+      id: "singleton", content: cur?.content ?? emptyCvContent(), photo, updatedAt: nowIso(),
+    };
+    set(() => ({ profile }));
+    await repo.putProfile(profile).catch(() => {});
+  },
+
+  async createCv(name, templateId) {
+    const src = get().profile?.content ?? emptyCvContent();
+    const cv: CvDoc = {
+      id: newId(), name, templateId, accent: "sky", showPhoto: templateId !== "classic",
+      content: structuredClone(src), sections: DEFAULT_SECTIONS.map((s) => ({ ...s })),
+      createdAt: nowIso(), updatedAt: nowIso(),
+    };
+    set((s) => ({ cvdocs: [cv, ...s.cvdocs] }));
+    await repo.putCvDoc(cv).catch(() => {});
+    return cv;
+  },
+
+  async duplicateCv(id) {
+    const src = get().cvdocs.find((c) => c.id === id);
+    if (!src) return null;
+    const cv: CvDoc = {
+      ...structuredClone(src), id: newId(), name: `${src.name} (copy)`,
+      createdAt: nowIso(), updatedAt: nowIso(),
+    };
+    set((s) => ({ cvdocs: [cv, ...s.cvdocs] }));
+    await repo.putCvDoc(cv).catch(() => {});
+    return cv;
+  },
+
+  async updateCv(id, patch) {
+    let next: CvDoc | undefined;
+    set((s) => ({
+      cvdocs: s.cvdocs.map((c) => (c.id === id ? (next = { ...c, ...patch, id, updatedAt: nowIso() }) : c)),
+    }));
+    if (next) await repo.putCvDoc(next).catch(() => {});
+  },
+
+  async updateCvContent(id, patch) {
+    let next: CvDoc | undefined;
+    set((s) => ({
+      cvdocs: s.cvdocs.map((c) =>
+        (c.id === id ? (next = { ...c, content: { ...c.content, ...patch }, updatedAt: nowIso() }) : c)),
+    }));
+    if (next) await repo.putCvDoc(next).catch(() => {});
+  },
+
+  async setCvSections(id, sections) {
+    let next: CvDoc | undefined;
+    set((s) => ({
+      cvdocs: s.cvdocs.map((c) => (c.id === id ? (next = { ...c, sections, updatedAt: nowIso() }) : c)),
+    }));
+    if (next) await repo.putCvDoc(next).catch(() => {});
+  },
+
+  async removeCv(id) {
+    set((s) => ({ cvdocs: s.cvdocs.filter((c) => c.id !== id) }));
+    await repo.deleteCvDoc(id).catch(() => {});
   },
 
   async clearDemo() {
