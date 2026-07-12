@@ -59,7 +59,7 @@ interface AppState extends Snapshot {
   clearDemo(): Promise<void>;
   resetAllData(): Promise<void>;
   importData(json: string, mode: "replace" | "merge"): Promise<void>;
-  exportJson(): string;
+  exportJson(): Promise<string>;
   setFilters(f: Filters): void;
   selectApp(id: string | null): void;
 }
@@ -377,8 +377,8 @@ export const useApp = create<AppState>()((set, get) => ({
 
   exportJson() {
     const s = get();
-    const { stages, applications, tags, interviews, contacts, events, notes, reminders, settings } = s;
-    return toJson({ stages, applications, tags, interviews, contacts, events, notes, reminders, settings });
+    const { stages, applications, tags, interviews, contacts, events, notes, reminders, settings, profile, cvdocs } = s;
+    return toJson({ stages, applications, tags, interviews, contacts, events, notes, reminders, settings, profile, cvdocs });
   },
 
   setFilters(f) { set(() => ({ filters: f })); },

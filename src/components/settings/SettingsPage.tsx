@@ -44,12 +44,7 @@ export function SettingsPage() {
   }
 
   function exportCsv() {
-    const { stages, applications, tags, interviews, contacts, events, notes, reminders, settings } = s;
-    download(
-      "jobtrackr-applications.csv",
-      toCsv({ stages, applications, tags, interviews, contacts, events, notes, reminders, settings }),
-      "text/csv",
-    );
+    download("jobtrackr-applications.csv", toCsv(s), "text/csv");
   }
 
   return (
@@ -170,7 +165,7 @@ export function SettingsPage() {
         <p className={sub}>Your data lives in this browser. Export it anytime — it’s yours.</p>
         <div className="mb-4 flex flex-wrap gap-2">
           <Button variant="secondary" size="sm"
-            onClick={() => download("jobtrackr-export.json", s.exportJson(), "application/json")}>
+            onClick={async () => download("jobtrackr-export.json", await s.exportJson(), "application/json")}>
             <Download className="h-3.5 w-3.5" aria-hidden /> Export JSON
           </Button>
           <Button variant="secondary" size="sm" onClick={exportCsv}>
