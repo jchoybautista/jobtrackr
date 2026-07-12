@@ -67,6 +67,19 @@ describe("exportio", () => {
     expect(new Uint8Array(await out.profile!.photo!.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3, 4]));
   });
 
+  it("round-trips a large photo blob without stack overflow", async () => {
+    const bytes = new Uint8Array(300_000).map((_, i) => i % 251);
+    const photo = new Blob([bytes], { type: "image/jpeg" });
+    const snap2: Snapshot = {
+      ...snap,
+      profile: { id: "singleton", content: emptyCvContent(), photo, updatedAt: "2026-07-12T00:00:00.000Z" },
+    };
+    const out = fromJson(await toJson(snap2));
+    expect(out.profile?.photo).toBeInstanceOf(Blob);
+    expect(out.profile?.photo?.type).toBe("image/jpeg");
+    expect(new Uint8Array(await out.profile!.photo!.arrayBuffer())).toEqual(bytes);
+  });
+
   it("accepts version-1 export files (no cv fields)", () => {
     const v1 = JSON.stringify({ version: 1, exportedAt: "x", data: legacyV1Data() });
     const out = fromJson(v1);

@@ -114,9 +114,16 @@ export async function toJson(snap: Snapshot): Promise<string> {
   let profileJson: ProfileJson | null = null;
   if (profile) {
     const { photo, ...p } = profile;
-    profileJson = photo
-      ? { ...p, photoBase64: btoa(String.fromCharCode(...new Uint8Array(await photo.arrayBuffer()))), photoType: photo.type }
-      : p;
+    if (photo) {
+      const buf = new Uint8Array(await photo.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 0x8000) {
+        bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+      }
+      profileJson = { ...p, photoBase64: btoa(bin), photoType: photo.type };
+    } else {
+      profileJson = p;
+    }
   }
   return JSON.stringify({
     version: 2, exportedAt: new Date().toISOString(),
