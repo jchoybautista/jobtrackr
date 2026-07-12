@@ -1,5 +1,6 @@
 import type React from "react";
 import type { CvContent, CvSection, SectionKey, TemplateId } from "@/cv/types";
+import { ClassicTemplate } from "./classic";
 
 export interface TemplateProps {
   content: CvContent;
@@ -17,7 +18,15 @@ export interface CvTemplate {
 }
 
 /** Populated by Tasks 5–7 via TEMPLATES.push(...). */
-export const TEMPLATES: CvTemplate[] = [];
+export const TEMPLATES: CvTemplate[] = [
+  {
+    id: "classic",
+    name: "Classic",
+    atsSafe: true,
+    note: "Single column, standard headings — parses cleanly in every ATS.",
+    render: ClassicTemplate,
+  },
+];
 
 export const getTemplate = (id: TemplateId): CvTemplate => TEMPLATES.find((t) => t.id === id)!;
 
