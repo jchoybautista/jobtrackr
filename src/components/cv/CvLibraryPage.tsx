@@ -64,7 +64,7 @@ function CvCard({ cv, profile }: { cv: CvDoc; profile: Profile | null }) {
           aria-label="CV name"
           onBlur={(e) => commitName(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-          className="w-full rounded-lg bg-transparent px-1 py-0.5 text-sm font-bold hover:bg-sunken focus:bg-sunken focus:outline-none"
+          className="w-full rounded-lg bg-transparent px-1 py-0.5 text-sm font-bold hover:bg-sunken focus:bg-sunken focus:outline-2 focus:outline-ink"
         />
         <div className="flex flex-wrap items-center gap-1.5 px-1">
           <span className="text-xs text-ink-3">{template.name}</span>
