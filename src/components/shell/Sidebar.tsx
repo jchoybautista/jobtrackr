@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, KanbanSquare, Bell, Settings } from "lucide-react";
+import { LayoutDashboard, KanbanSquare, FileText, Bell, Settings } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { dueReminders } from "@/lib/selectors";
 
 export const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/", label: "Board", icon: KanbanSquare },
+  { href: "/cv", label: "CV Builder", icon: FileText },
   { href: "/reminders", label: "Reminders", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
