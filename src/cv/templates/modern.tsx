@@ -1,19 +1,14 @@
 import { Document, Image, Link, Page, Text, View } from "@react-pdf/renderer";
-import type { ReactNode } from "react";
-import { formatMonthYear, formatRange } from "@/cv/dates";
 import { SECTION_LABELS, type SectionKey } from "@/cv/types";
 import { mixWithWhite } from "@/lib/palette";
-import { baseStyles, BulletList, MetaText, PageFooter, Row, SectionTitle } from "./shared";
+import { baseStyles, PageFooter, SectionTitle } from "./shared";
+import { renderMainSection } from "./sections";
 import { visibleSections, type TemplateProps } from "./index";
 
 /** Sidebar owns these keys; the main column must skip them. */
 const SIDEBAR_KEYS: readonly SectionKey[] = ["skills", "languages"];
 
 const SIDEBAR_WIDTH = 176;
-
-function Paragraph({ children }: { children: string }) {
-  return <Text style={{ marginTop: 2 }}>{children}</Text>;
-}
 
 /** Small uppercase heading used inside the sidebar. */
 function SidebarHeading({ children, accent }: { children: string; accent: string }) {
@@ -45,98 +40,6 @@ export function ModernTemplate({ content, accent, accentSoft, photoUrl, ...rest 
   const showLanguages = keys.includes("languages");
 
   const links = c.links.filter((l) => l.url.trim());
-
-  function renderSection(key: SectionKey): ReactNode {
-    switch (key) {
-      case "summary":
-        return <Paragraph>{c.summary!.trim()}</Paragraph>;
-
-      case "experience":
-        return c.experience.map((e) => (
-          <View key={e.id} style={{ marginBottom: 7 }} wrap={false}>
-            <Row
-              left={[e.role, e.company].filter(Boolean).join(" — ")}
-              right={formatRange(e.startDate, e.endDate)}
-            />
-            {e.location ? <MetaText>{e.location}</MetaText> : null}
-            <BulletList items={e.bullets} />
-          </View>
-        ));
-
-      case "education":
-        return c.education.map((e) => (
-          <View key={e.id} style={{ marginBottom: 6 }} wrap={false}>
-            <Row left={e.school} right={formatRange(e.startDate, e.endDate)} />
-            {[e.degree, e.field].filter(Boolean).length > 0 ? (
-              <MetaText>{[e.degree, e.field].filter(Boolean).join(", ")}</MetaText>
-            ) : null}
-            {e.notes ? <Paragraph>{e.notes}</Paragraph> : null}
-          </View>
-        ));
-
-      case "projects":
-        return c.projects.map((p) => (
-          <View key={p.id} style={{ marginBottom: 6 }} wrap={false}>
-            <Row left={p.name} right={undefined} />
-            {p.url ? (
-              <Link src={p.url} style={{ ...baseStyles.meta, textDecoration: "none" }}>
-                {p.url}
-              </Link>
-            ) : null}
-            {p.description ? <Paragraph>{p.description}</Paragraph> : null}
-            <BulletList items={p.bullets} />
-          </View>
-        ));
-
-      case "certifications":
-        return c.certifications.map((e) => (
-          <View key={e.id} style={{ marginBottom: 3 }}>
-            <Row left={e.name} right={formatMonthYear(e.date)} />
-            {e.issuer ? <MetaText>{e.issuer}</MetaText> : null}
-          </View>
-        ));
-
-      case "awards":
-        return c.awards.map((e) => (
-          <View key={e.id} style={{ marginBottom: 3 }}>
-            <Row left={e.name} right={formatMonthYear(e.date)} />
-            {e.issuer ? <MetaText>{e.issuer}</MetaText> : null}
-          </View>
-        ));
-
-      case "volunteer":
-        return c.volunteer.map((e) => (
-          <View key={e.id} style={{ marginBottom: 6 }} wrap={false}>
-            <Row
-              left={[e.role, e.org].filter(Boolean).join(" — ")}
-              right={formatRange(e.startDate, e.endDate)}
-            />
-            {e.description ? <Paragraph>{e.description}</Paragraph> : null}
-          </View>
-        ));
-
-      case "interests":
-        return <Paragraph>{c.interests!.trim()}</Paragraph>;
-
-      case "references":
-        if (c.referencesOnRequest && c.references.length === 0) {
-          return <Paragraph>References available on request.</Paragraph>;
-        }
-        return c.references.map((r) => (
-          <View key={r.id} style={{ marginBottom: 3 }}>
-            <Row left={[r.name, r.role].filter(Boolean).join(" — ")} right={r.company} />
-            {[r.email, r.phone].filter(Boolean).length > 0 ? (
-              <MetaText>{[r.email, r.phone].filter(Boolean).join(" · ")}</MetaText>
-            ) : null}
-          </View>
-        ));
-
-      // skills + languages live in the sidebar; never rendered in the main column.
-      case "skills":
-      case "languages":
-        return null;
-    }
-  }
 
   return (
     <Document title={c.fullName || "CV"} author={c.fullName || undefined}>
@@ -215,7 +118,8 @@ export function ModernTemplate({ content, accent, accentSoft, photoUrl, ...rest 
           ) : null}
         </View>
 
-        {/* Main column */}
+        {/* Main column — skills/languages live in the sidebar, so the shared
+            renderer's null for those keys never comes into play here. */}
         <View
           style={{
             flex: 1,
@@ -234,7 +138,7 @@ export function ModernTemplate({ content, accent, accentSoft, photoUrl, ...rest 
               <SectionTitle accent={accent} rule={accentSoft}>
                 {SECTION_LABELS[key]}
               </SectionTitle>
-              {renderSection(key)}
+              {renderMainSection(key, c)}
             </View>
           ))}
         </View>

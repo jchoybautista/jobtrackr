@@ -50,3 +50,13 @@ describe("modern template", () => {
     expect(buf2.length).toBeGreaterThan(5000);
   });
 });
+
+describe("elegant template", () => {
+  it("renders and registry is complete", async () => {
+    const buf = await renderCvBuffer(sampleCv("elegant"), FONTS);
+    expect(buf.subarray(0, 5).toString()).toBe("%PDF-");
+    const { TEMPLATES } = await import("@/cv/templates");
+    expect(TEMPLATES.map((t) => t.id).sort()).toEqual(["classic", "elegant", "modern"]);
+    expect(TEMPLATES.filter((t) => t.atsSafe).map((t) => t.id)).toEqual(["classic"]);
+  });
+});

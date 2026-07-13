@@ -29,10 +29,11 @@ export function SectionTitle({
   serif = false,
 }: {
   children: string;
-  /** Text color — pass the darkened, text-safe accent. */
+  /** Text color — pass the darkened, text-safe accent (or ink for serif templates). */
   accent: string;
   /** Border (rule) color — pass the raw pastel accent. */
   rule: string;
+  /** Serif variant: Lora with a wider, small-caps-feel tracking. */
   serif?: boolean;
 }) {
   return (
@@ -41,14 +42,14 @@ export function SectionTitle({
         fontFamily: serif ? "Lora" : "Jakarta",
         fontWeight: 700,
         fontSize: 11,
-        letterSpacing: 0.8,
+        letterSpacing: serif ? 1.2 : 0.8,
         textTransform: "uppercase",
         color: accent,
         borderBottomWidth: 0.75,
         borderBottomColor: rule,
         paddingBottom: 2,
         marginBottom: 6,
-        marginTop: 12,
+        marginTop: serif ? 16 : 12,
       }}
     >
       {children}

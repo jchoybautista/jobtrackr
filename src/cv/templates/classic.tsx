@@ -1,8 +1,8 @@
 import { Document, Link, Page, Text, View } from "@react-pdf/renderer";
 import type { ReactNode } from "react";
-import { formatMonthYear, formatRange } from "@/cv/dates";
 import { SECTION_LABELS, type SectionKey } from "@/cv/types";
-import { baseStyles, BulletList, MetaText, PageFooter, Row, SectionTitle } from "./shared";
+import { baseStyles, PageFooter, SectionTitle } from "./shared";
+import { renderMainSection } from "./sections";
 import { visibleSections, type TemplateProps } from "./index";
 
 /** Join contact/meta segments with a middot, dropping empties. */
@@ -10,10 +10,6 @@ function joinParts(parts: ReactNode[]): ReactNode[] {
   return parts
     .filter((p) => p !== null && p !== undefined && p !== "")
     .flatMap((p, i) => (i === 0 ? [p] : [<Text key={`sep${i}`}> · </Text>, p]));
-}
-
-function Paragraph({ children }: { children: string }) {
-  return <Text style={{ marginTop: 2 }}>{children}</Text>;
 }
 
 export function ClassicTemplate({ content, accent, accentSoft, ...rest }: TemplateProps) {
@@ -34,61 +30,14 @@ export function ClassicTemplate({ content, accent, accentSoft, ...rest }: Templa
       )),
   ];
 
+  /** Classic-specific bodies (inline skills/languages); everything else is shared. */
   function renderSection(key: SectionKey): ReactNode {
     switch (key) {
-      case "summary":
-        return <Paragraph>{c.summary!.trim()}</Paragraph>;
-
-      case "experience":
-        return c.experience.map((e) => (
-          <View key={e.id} style={{ marginBottom: 7 }} wrap={false}>
-            <Row
-              left={[e.role, e.company].filter(Boolean).join(" — ")}
-              right={formatRange(e.startDate, e.endDate)}
-            />
-            {e.location ? <MetaText>{e.location}</MetaText> : null}
-            <BulletList items={e.bullets} />
-          </View>
-        ));
-
-      case "education":
-        return c.education.map((e) => (
-          <View key={e.id} style={{ marginBottom: 6 }} wrap={false}>
-            <Row left={e.school} right={formatRange(e.startDate, e.endDate)} />
-            {[e.degree, e.field].filter(Boolean).length > 0 ? (
-              <MetaText>{[e.degree, e.field].filter(Boolean).join(", ")}</MetaText>
-            ) : null}
-            {e.notes ? <Paragraph>{e.notes}</Paragraph> : null}
-          </View>
-        ));
-
       case "skills":
         return c.skills.map((g) => (
           <View key={g.id} style={{ flexDirection: "row", marginBottom: 2 }}>
             <Text style={{ fontWeight: 700 }}>{g.name}: </Text>
             <Text style={{ flex: 1 }}>{g.skills.filter(Boolean).join(", ")}</Text>
-          </View>
-        ));
-
-      case "projects":
-        return c.projects.map((p) => (
-          <View key={p.id} style={{ marginBottom: 6 }} wrap={false}>
-            <Row left={p.name} right={undefined} />
-            {p.url ? (
-              <Link src={p.url} style={{ ...baseStyles.meta, textDecoration: "none" }}>
-                {p.url}
-              </Link>
-            ) : null}
-            {p.description ? <Paragraph>{p.description}</Paragraph> : null}
-            <BulletList items={p.bullets} />
-          </View>
-        ));
-
-      case "certifications":
-        return c.certifications.map((e) => (
-          <View key={e.id} style={{ marginBottom: 3 }}>
-            <Row left={e.name} right={formatMonthYear(e.date)} />
-            {e.issuer ? <MetaText>{e.issuer}</MetaText> : null}
           </View>
         ));
 
@@ -102,40 +51,8 @@ export function ClassicTemplate({ content, accent, accentSoft, ...rest }: Templa
           </Text>
         );
 
-      case "awards":
-        return c.awards.map((e) => (
-          <View key={e.id} style={{ marginBottom: 3 }}>
-            <Row left={e.name} right={formatMonthYear(e.date)} />
-            {e.issuer ? <MetaText>{e.issuer}</MetaText> : null}
-          </View>
-        ));
-
-      case "volunteer":
-        return c.volunteer.map((e) => (
-          <View key={e.id} style={{ marginBottom: 6 }} wrap={false}>
-            <Row
-              left={[e.role, e.org].filter(Boolean).join(" — ")}
-              right={formatRange(e.startDate, e.endDate)}
-            />
-            {e.description ? <Paragraph>{e.description}</Paragraph> : null}
-          </View>
-        ));
-
-      case "interests":
-        return <Paragraph>{c.interests!.trim()}</Paragraph>;
-
-      case "references":
-        if (c.referencesOnRequest && c.references.length === 0) {
-          return <Paragraph>References available on request.</Paragraph>;
-        }
-        return c.references.map((r) => (
-          <View key={r.id} style={{ marginBottom: 3 }}>
-            <Row left={[r.name, r.role].filter(Boolean).join(" — ")} right={r.company} />
-            {[r.email, r.phone].filter(Boolean).length > 0 ? (
-              <MetaText>{[r.email, r.phone].filter(Boolean).join(" · ")}</MetaText>
-            ) : null}
-          </View>
-        ));
+      default:
+        return renderMainSection(key, c);
     }
   }
 
