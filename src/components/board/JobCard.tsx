@@ -3,7 +3,7 @@
 import type { Application, Interview, Tag } from "@/lib/types";
 import { formatSalary, relativeDays, shortDate } from "@/lib/format";
 import { TagPill } from "@/components/ui/TagPill";
-import { AlarmClock, CalendarClock, StickyNote } from "lucide-react";
+import { AlarmClock, CalendarClock, FileText, StickyNote } from "lucide-react";
 
 export interface JobCardProps {
   app: Application;
@@ -12,12 +12,13 @@ export interface JobCardProps {
   nudgeDays?: number;
   interview?: Interview;
   noteCount?: number;
+  docCount?: number;
   dimmed?: boolean;
   onClick?: () => void;
 }
 
 export function JobCard({
-  app, tags, tints, nudgeDays, interview, noteCount = 0, dimmed, onClick,
+  app, tags, tints, nudgeDays, interview, noteCount = 0, docCount = 0, dimmed, onClick,
 }: JobCardProps) {
   const salary = formatSalary(app);
   const meta = [app.company, app.location, salary].filter(Boolean).join(" · ");
@@ -52,12 +53,20 @@ export function JobCard({
 
       <span className="mt-2.5 flex items-center justify-between text-[11px] text-ink-3">
         <span>{app.appliedAt ? `Applied ${relativeDays(app.appliedAt, new Date().toISOString())}` : `Saved ${relativeDays(app.createdAt, new Date().toISOString())}`}</span>
-        {noteCount > 0 && (
-          <span className="flex items-center gap-1">
-            <StickyNote className="h-3 w-3" aria-hidden />
-            {noteCount}
-          </span>
-        )}
+        <span className="flex items-center gap-2.5">
+          {docCount > 0 && (
+            <span className="flex items-center gap-1">
+              <FileText className="h-3 w-3" aria-hidden />
+              {docCount}
+            </span>
+          )}
+          {noteCount > 0 && (
+            <span className="flex items-center gap-1">
+              <StickyNote className="h-3 w-3" aria-hidden />
+              {noteCount}
+            </span>
+          )}
+        </span>
       </span>
     </button>
   );

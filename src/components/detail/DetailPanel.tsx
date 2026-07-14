@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Trash2, X, Plus, ExternalLink, BellRing } from "lucide-react";
+import { Trash2, X, Plus, ExternalLink, BellRing, FileText } from "lucide-react";
 import { useApp } from "@/lib/store";
 import type { InterviewRound, WorkMode } from "@/lib/types";
+import { getTemplate } from "@/cv/templates";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
 import { relativeDays, shortDate } from "@/lib/format";
@@ -15,6 +17,7 @@ const sectionTitle = "mb-2 text-[10px] font-bold uppercase tracking-wider text-i
 
 export function DetailPanel() {
   const s = useApp();
+  const router = useRouter();
   const app = s.applications.find((a) => a.id === s.selectedAppId) ?? null;
   const panelRef = useRef<HTMLDivElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -41,6 +44,8 @@ export function DetailPanel() {
   const events = s.events.filter((e) => e.applicationId === app.id);
   const reminders = s.reminders.filter((r) => r.applicationId === app.id && !r.done)
     .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  const linkedDocs = s.cvdocs.filter((c) => c.applicationId === app.id);
+  const unlinkedDocs = s.cvdocs.filter((c) => !c.applicationId);
   const hasLink = /^https?:\/\//.test(app.url ?? "");
 
   const save = (patch: Parameters<typeof s.updateApplication>[1]) =>
@@ -228,6 +233,38 @@ export function DetailPanel() {
                 <input id="rem-at" type="datetime-local" required value={reminderDraft.dueAt} onChange={(e) => setReminderDraft({ ...reminderDraft, dueAt: e.target.value })} className={input} /></div>
               <Button type="submit" size="sm" aria-label="Add reminder"><Plus className="h-3.5 w-3.5" aria-hidden /></Button>
             </form>
+          </section>
+
+          <section aria-label="Documents">
+            <h3 className={sectionTitle}>Documents</h3>
+            <ul className="mb-3 flex flex-col gap-2">
+              {linkedDocs.map((cv) => (
+                <li key={cv.id} className="flex items-center justify-between gap-2 rounded-xl border border-line-2 px-3 py-2 text-sm">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
+                    <span className="min-w-0 truncate"><span className="font-semibold">{cv.name}</span>
+                      <span className="text-ink-3"> · {getTemplate(cv.templateId).name}</span></span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1">
+                    <button type="button" onClick={() => router.push(`/cv/${cv.id}`)}
+                      className="rounded-full px-2 py-1 text-xs font-semibold text-ink-2 hover:bg-sunken">Open</button>
+                    <button type="button" aria-label={`Unlink ${cv.name}`} onClick={() => void s.updateCv(cv.id, { applicationId: undefined })}
+                      className="rounded-full p-1.5 text-ink-3 hover:bg-sunken"><X className="h-3.5 w-3.5" aria-hidden /></button>
+                  </span>
+                </li>
+              ))}
+              {linkedDocs.length === 0 && <li className="text-xs text-ink-3">No documents linked yet.</li>}
+            </ul>
+            {unlinkedDocs.length > 0 && (
+              <>
+                <label htmlFor="attach-cv" className="sr-only">Attach a CV</label>
+                <select id="attach-cv" value="" className={input}
+                  onChange={(e) => { if (e.target.value) void s.updateCv(e.target.value, { applicationId: app.id }); }}>
+                  <option value="">Attach a CV…</option>
+                  {unlinkedDocs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name} · {getTemplate(cv.templateId).name}</option>)}
+                </select>
+              </>
+            )}
           </section>
 
           <section aria-label="Notes">

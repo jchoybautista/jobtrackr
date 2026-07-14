@@ -54,6 +54,13 @@ export function BoardPage() {
     for (const n of s.notes) m.set(n.applicationId, (m.get(n.applicationId) ?? 0) + 1);
     return m;
   }, [s.notes]);
+  const docCountByApp = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of s.cvdocs) {
+      if (c.applicationId) m.set(c.applicationId, (m.get(c.applicationId) ?? 0) + 1);
+    }
+    return m;
+  }, [s.cvdocs]);
   const tagById = useMemo(() => new Map(s.tags.map((t) => [t.id, t])), [s.tags]);
 
   const activeCount = s.applications.filter((a) => {
@@ -108,6 +115,7 @@ export function BoardPage() {
               nudges={nudges}
               nextInterviewByApp={nextInterviewByApp}
               noteCountByApp={noteCountByApp}
+              docCountByApp={docCountByApp}
               onCardClick={(id) => s.selectApp(id)}
             />
           ))}

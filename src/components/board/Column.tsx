@@ -18,6 +18,7 @@ export interface ColumnProps {
   nudges: Map<string, number>;
   nextInterviewByApp: Map<string, Interview>;
   noteCountByApp: Map<string, number>;
+  docCountByApp: Map<string, number>;
   onCardClick: (id: string) => void;
 }
 
@@ -38,7 +39,7 @@ function SortableCard(props: JobCardProps) {
 }
 
 export function Column({
-  stage, apps, tagById, nudges, nextInterviewByApp, noteCountByApp, onCardClick,
+  stage, apps, tagById, nudges, nextInterviewByApp, noteCountByApp, docCountByApp, onCardClick,
 }: ColumnProps) {
   const tints = columnTints(stage.color);
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
@@ -89,6 +90,7 @@ export function Column({
               nudgeDays={nudges.get(app.id)}
               interview={nextInterviewByApp.get(app.id)}
               noteCount={noteCountByApp.get(app.id) ?? 0}
+              docCount={docCountByApp.get(app.id) ?? 0}
               dimmed={stage.kind === "lost"}
               onClick={() => onCardClick(app.id)}
             />
