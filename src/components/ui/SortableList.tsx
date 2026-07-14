@@ -11,9 +11,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 
-function Row({ id, label, children }: {
+function Row({ id, label, itemClassName, children }: {
   id: string;
   label: string;
+  itemClassName: string;
   children: (handle: ReactNode) => ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -30,14 +31,17 @@ function Row({ id, label, children }: {
     </button>
   );
 
+  // The <li> IS the sortable node. Wrapping it in a positioned <div> would put
+  // a non-<li> child inside the <ul> and break list semantics for screen
+  // readers, so the row element itself carries the drag transform.
   return (
-    <div
+    <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={isDragging ? "opacity-40" : ""}
+      className={`${itemClassName} ${isDragging ? "opacity-40" : ""}`}
     >
       {children(handle)}
-    </div>
+    </li>
   );
 }
 
@@ -49,11 +53,17 @@ function Row({ id, label, children }: {
  *  owner (SectionRail) wants the array, while a store with a `move(id, index)`
  *  API (the settings pipeline) wants the one moved item, since a splice shifts
  *  every item in between and diffing indices would fire a cascade of moves. */
-export function SortableList<T>({ items, getId, getLabel, onReorder, children }: {
+export function SortableList<T>({
+  items, getId, getLabel, onReorder, className = "", itemClassName = "", children,
+}: {
   items: T[];
   getId: (item: T) => string;
   getLabel: (item: T) => string;
   onReorder: (items: T[], moved: { id: string; toIndex: number }) => void;
+  /** Classes for the <ul> this renders. */
+  className?: string;
+  /** Classes for each <li>. */
+  itemClassName?: string;
   children: (item: T, handle: ReactNode) => ReactNode;
 }) {
   const sensors = useSensors(
@@ -76,11 +86,13 @@ export function SortableList<T>({ items, getId, getLabel, onReorder, children }:
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map(getId)} strategy={verticalListSortingStrategy}>
-        {items.map((item) => (
-          <Row key={getId(item)} id={getId(item)} label={getLabel(item)}>
-            {(handle) => children(item, handle)}
-          </Row>
-        ))}
+        <ul className={className}>
+          {items.map((item) => (
+            <Row key={getId(item)} id={getId(item)} label={getLabel(item)} itemClassName={itemClassName}>
+              {(handle) => children(item, handle)}
+            </Row>
+          ))}
+        </ul>
       </SortableContext>
     </DndContext>
   );

@@ -21,6 +21,18 @@ const cardFooter = "-mx-5 -mb-5 mt-4 rounded-b-2xl";
 const h2 = "mb-1 text-sm font-bold";
 const sub = "mb-4 text-xs text-ink-3";
 
+/** List rows reserve space for a grip, a colour dot and a delete button, so an
+ *  add-field placed in a bare row would not share their left and right edges.
+ *  These clone the real controls and hide them, keeping every text field in a
+ *  card on one column without hard-coding the gutter widths. */
+const GripSpacer = () => <span className="invisible shrink-0 p-1.5" aria-hidden><span className="block h-4 w-4" /></span>;
+const DotSpacer = () => <span className="invisible h-5 w-5 shrink-0" aria-hidden />;
+const DeleteSpacer = () => (
+  <Button variant="ghost" size="sm" className="invisible" tabIndex={-1} aria-hidden>
+    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+  </Button>
+);
+
 function download(filename: string, content: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
   const a = document.createElement("a");
@@ -110,15 +122,16 @@ export function SettingsPage() {
       <section aria-label="Pipeline" className={card}>
         <h2 className={h2}>Pipeline</h2>
         <p className={sub}>Rename, reorder, recolor, or add columns. Colors come from the JobTrackr pastel set.</p>
-        <ul className="mb-3 flex flex-col gap-2">
-          <SortableList
-            items={sorted}
-            getId={(st) => st.id}
-            getLabel={(st) => st.name}
-            onReorder={(_next, moved) => void s.moveStage(moved.id, moved.toIndex)}
-          >
+        <SortableList
+          items={sorted}
+          getId={(st) => st.id}
+          getLabel={(st) => st.name}
+          onReorder={(_next, moved) => void s.moveStage(moved.id, moved.toIndex)}
+          className="mb-3 flex flex-col gap-2"
+          itemClassName="relative flex items-center gap-2.5"
+        >
             {(st, handle) => (
-              <li className="relative flex items-center gap-2.5 py-0.5">
+              <>
                 {handle}
                 <button
                   ref={pickerFor === st.id ? dotRef : undefined}
@@ -143,10 +156,9 @@ export function SettingsPage() {
                   onClick={() => setConfirmStage(st.id)}>
                   <Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden />
                 </Button>
-              </li>
+              </>
             )}
-          </SortableList>
-        </ul>
+        </SortableList>
 
         {confirmStage && (
           <div role="alertdialog" aria-modal="true" aria-label="Delete column"
@@ -170,10 +182,13 @@ export function SettingsPage() {
           void s.addStage(newStage.trim());
           setNewStage("");
         }}>
-          <div className="sm:col-span-2">
+          <div className="flex items-center gap-2.5 sm:col-span-2">
+            <GripSpacer />
+            <DotSpacer />
             <label htmlFor="new-stage" className="sr-only">New column name</label>
             <input id="new-stage" value={newStage} onChange={(e) => setNewStage(e.target.value)}
-              placeholder="New column (e.g. Ghosted, Withdrawn)" className={`${input} w-full`} />
+              placeholder="New column (e.g. Ghosted, Withdrawn)" className={`${input} flex-1`} />
+            <DeleteSpacer />
           </div>
         </AddRow>
 
@@ -218,10 +233,11 @@ export function SettingsPage() {
           void s.addTag(newTag.trim());
           setNewTag("");
         }}>
-          <div className="sm:col-span-2">
+          <div className="flex items-center gap-2.5 sm:col-span-2">
             <label htmlFor="new-tag" className="sr-only">New tag name</label>
             <input id="new-tag" value={newTag} onChange={(e) => setNewTag(e.target.value)}
-              placeholder="New tag (e.g. Visa sponsor)" className={`${input} w-full`} />
+              placeholder="New tag (e.g. Visa sponsor)" className={`${input} flex-1`} />
+            <DeleteSpacer />
           </div>
         </AddRow>
 
