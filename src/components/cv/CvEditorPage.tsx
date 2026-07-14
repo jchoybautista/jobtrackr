@@ -1,20 +1,32 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, FileQuestion, FileText } from "lucide-react";
+import { ArrowLeft, FileQuestion } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { SECTION_LABELS, type CvContent, type CvSection } from "@/cv/types";
 import { CONTENT_FORMS, ContactForm } from "./content-forms";
 import { SectionRail } from "./SectionRail";
+import { CvToolbar } from "./CvToolbar";
+import { CvPreview } from "./CvPreview";
 
 const backLink =
   "inline-flex items-center gap-1.5 rounded-full text-xs font-semibold text-ink-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-ink";
 
 export function CvEditorPage({ id }: { id: string }) {
   const cv = useApp((s) => s.cvdocs.find((c) => c.id === id));
+  const photo = useApp((s) => s.profile?.photo);
   const updateCv = useApp((s) => s.updateCv);
   const updateCvContent = useApp((s) => s.updateCvContent);
   const setCvSections = useApp((s) => s.setCvSections);
+
+  // Derive a single object URL from the profile photo Blob, shared by the
+  // toolbar (download) and the live preview; revoked on change/unmount.
+  const photoUrl = useMemo(() => (photo ? URL.createObjectURL(photo) : undefined), [photo]);
+  useEffect(() => {
+    if (!photoUrl) return;
+    return () => URL.revokeObjectURL(photoUrl);
+  }, [photoUrl]);
 
   // AppShell already gates children on hydration, so a missing cv here is a
   // genuine unknown id — not a pre-load flash.
@@ -89,12 +101,11 @@ export function CvEditorPage({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* Right pane — live preview placeholder (real react-pdf preview: Task 12) */}
-      <div className="flex min-h-64 flex-1 items-center justify-center bg-sunken p-8 lg:h-dvh">
-        <div className="text-center">
-          <FileText className="mx-auto mb-3 h-10 w-10 text-ink-3" aria-hidden />
-          <p className="text-sm font-semibold text-ink-2">Preview loads here</p>
-          <p className="mt-1 text-xs text-ink-3">Live A4 preview arrives in the next step.</p>
+      {/* Right pane — toolbar + live A4 PDF preview */}
+      <div className="flex flex-1 flex-col bg-sunken lg:h-dvh">
+        <CvToolbar cv={cv} photoUrl={photoUrl} />
+        <div className="min-h-[70vh] flex-1 p-4 lg:min-h-0 lg:p-6">
+          <CvPreview cv={cv} photoUrl={photoUrl} />
         </div>
       </div>
     </div>

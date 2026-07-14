@@ -1,0 +1,120 @@
+"use client";
+
+import { Component, useEffect, useState, useTransition, type ReactNode } from "react";
+import { Loader2, RotateCw } from "lucide-react";
+import { renderCvBlob } from "@/cv/pdf";
+import { Button } from "@/components/ui/Button";
+import type { CvDoc } from "@/cv/types";
+
+/**
+ * Catches render-time failures from the PDF preview (react-pdf can throw on
+ * malformed content) so the editor never white-screens. Remounted via `key`
+ * on retry, which resets both the boundary and the inner render pipeline.
+ */
+class PreviewErrorBoundary extends Component<
+  { children: ReactNode; onRetry: () => void },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-3 rounded-2xl border border-line-2 bg-surface p-8 text-center">
+          <p className="max-w-xs text-sm font-semibold text-ink-2">
+            Preview failed to render — your data is safe.
+          </p>
+          <Button variant="secondary" size="sm" onClick={this.props.onRetry}>
+            <RotateCw className="h-3.5 w-3.5" aria-hidden /> Retry
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [rendering, setRendering] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [, startTransition] = useTransition();
+
+  // Debounced (500ms) regeneration: every cv/photo change resets the timer so
+  // rapid typing coalesces into a single render. useTransition keeps the URL
+  // swap non-urgent so keystrokes stay responsive.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setRendering(true);
+      renderCvBlob(cv, photoUrl)
+        .then((blob) => {
+          if (cancelled) return;
+          const next = URL.createObjectURL(blob);
+          startTransition(() => setUrl(next));
+        })
+        .catch((e) => {
+          if (!cancelled) setError(e instanceof Error ? e : new Error(String(e)));
+        })
+        .finally(() => {
+          if (!cancelled) setRendering(false);
+        });
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [cv, photoUrl]);
+
+  // Revoke the previous object URL when it is replaced or on unmount — no leak.
+  useEffect(() => {
+    if (!url) return;
+    return () => URL.revokeObjectURL(url);
+  }, [url]);
+
+  // Route async render failures through the error boundary.
+  if (error) throw error;
+
+  return (
+    <div className="relative h-full w-full">
+      {url ? (
+        <iframe
+          title="CV preview (PDF)"
+          src={url}
+          className="h-full w-full rounded-2xl border border-line-2 bg-white"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center rounded-2xl border border-line-2 bg-white">
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-ink-3">
+            <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden />
+            Rendering…
+          </span>
+        </div>
+      )}
+
+      {/* Subtle "regenerating" overlay — only once a preview already exists. */}
+      {url && rendering && (
+        <div
+          aria-live="polite"
+          className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-line-2 bg-surface/90 px-3 py-1.5 text-xs font-semibold text-ink-2 shadow-sm backdrop-blur"
+        >
+          <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" aria-hidden />
+          Rendering…
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function CvPreview({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
+  const [nonce, setNonce] = useState(0);
+  return (
+    <PreviewErrorBoundary key={nonce} onRetry={() => setNonce((n) => n + 1)}>
+      <PreviewInner cv={cv} photoUrl={photoUrl} />
+    </PreviewErrorBoundary>
+  );
+}
