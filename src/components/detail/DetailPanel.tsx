@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { Trash2, X, Plus, ExternalLink, BellRing, FileText } from "lucide-react";
+import { Trash2, X, ExternalLink, BellRing, FileText } from "lucide-react";
 import { useApp } from "@/lib/store";
 import type { Application, InterviewRound, WorkMode } from "@/lib/types";
 import { TEMPLATE_META } from "@/cv/types";
 import { Button } from "@/components/ui/Button";
+import { AddRow } from "@/components/ui/AddRow";
 import { SaveFooter } from "@/components/ui/SaveFooter";
 import { toast } from "@/components/ui/Toast";
 import { isDirty, changedFields } from "@/lib/draft";
@@ -190,23 +191,23 @@ export function DetailPanel() {
               ))}
               {interviews.length === 0 && <li className="text-xs text-ink-3">No interviews scheduled yet.</li>}
             </ul>
-            <form className="flex items-end gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!ivDraft.scheduledAt) return;
-                void s.addInterview({ applicationId: app.id, roundType: ivDraft.roundType,
-                  scheduledAt: new Date(ivDraft.scheduledAt).toISOString(),
-                  locationOrLink: ivDraft.locationOrLink || undefined });
-                setIvDraft({ roundType: "phone", scheduledAt: "", locationOrLink: "" });
-              }}>
+            <AddRow label="Add interview" onSubmit={() => {
+              if (!ivDraft.scheduledAt) return;
+              void s.addInterview({ applicationId: app.id, roundType: ivDraft.roundType,
+                scheduledAt: new Date(ivDraft.scheduledAt).toISOString(),
+                locationOrLink: ivDraft.locationOrLink || undefined });
+              setIvDraft({ roundType: "phone", scheduledAt: "", locationOrLink: "" });
+            }}>
               <div><label htmlFor="iv-type" className={label}>Round</label>
-                <select id="iv-type" value={ivDraft.roundType} onChange={(e) => setIvDraft({ ...ivDraft, roundType: e.target.value as InterviewRound })} className={input}>
+                <select id="iv-type" value={ivDraft.roundType}
+                  onChange={(e) => setIvDraft({ ...ivDraft, roundType: e.target.value as InterviewRound })}
+                  className={input}>
                   {(["phone", "technical", "panel", "final", "other"] as const).map((r) => <option key={r} value={r}>{r}</option>)}
                 </select></div>
               <div><label htmlFor="iv-at" className={label}>When</label>
-                <input id="iv-at" type="datetime-local" required value={ivDraft.scheduledAt} onChange={(e) => setIvDraft({ ...ivDraft, scheduledAt: e.target.value })} className={input} /></div>
-              <Button type="submit" size="sm" aria-label="Add interview"><Plus className="h-3.5 w-3.5" aria-hidden /></Button>
-            </form>
+                <input id="iv-at" type="datetime-local" required value={ivDraft.scheduledAt}
+                  onChange={(e) => setIvDraft({ ...ivDraft, scheduledAt: e.target.value })} className={input} /></div>
+            </AddRow>
           </section>
 
           <section aria-label="Contacts">
@@ -221,20 +222,19 @@ export function DetailPanel() {
                 </li>
               ))}
             </ul>
-            <form className="flex items-end gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!contactDraft.name.trim()) return;
-                void s.addContact({ applicationId: app.id, name: contactDraft.name.trim(),
-                  role: contactDraft.role || undefined, email: contactDraft.email || undefined });
-                setContactDraft({ name: "", role: "", email: "" });
-              }}>
-              <div className="flex-1"><label htmlFor="c-name" className={label}>Name</label>
-                <input id="c-name" required value={contactDraft.name} onChange={(e) => setContactDraft({ ...contactDraft, name: e.target.value })} className={input} /></div>
-              <div className="flex-1"><label htmlFor="c-email" className={label}>Email</label>
-                <input id="c-email" type="email" value={contactDraft.email} onChange={(e) => setContactDraft({ ...contactDraft, email: e.target.value })} className={input} /></div>
-              <Button type="submit" size="sm" aria-label="Add contact"><Plus className="h-3.5 w-3.5" aria-hidden /></Button>
-            </form>
+            <AddRow label="Add contact" onSubmit={() => {
+              if (!contactDraft.name.trim()) return;
+              void s.addContact({ applicationId: app.id, name: contactDraft.name.trim(),
+                role: contactDraft.role || undefined, email: contactDraft.email || undefined });
+              setContactDraft({ name: "", role: "", email: "" });
+            }}>
+              <div><label htmlFor="c-name" className={label}>Name</label>
+                <input id="c-name" required value={contactDraft.name}
+                  onChange={(e) => setContactDraft({ ...contactDraft, name: e.target.value })} className={input} /></div>
+              <div><label htmlFor="c-email" className={label}>Email</label>
+                <input id="c-email" type="email" value={contactDraft.email}
+                  onChange={(e) => setContactDraft({ ...contactDraft, email: e.target.value })} className={input} /></div>
+            </AddRow>
           </section>
 
           <section aria-label="Reminders">
@@ -249,22 +249,21 @@ export function DetailPanel() {
               ))}
               {reminders.length === 0 && <li className="text-xs text-ink-3">No reminders yet.</li>}
             </ul>
-            <form className="flex items-end gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!reminderDraft.title.trim() || !reminderDraft.dueAt) return;
-                void s.addReminder({ applicationId: app.id, type: "custom",
-                  title: reminderDraft.title.trim(),
-                  dueAt: new Date(reminderDraft.dueAt).toISOString() });
-                setReminderDraft({ title: "", dueAt: "" });
-              }}>
-              <div className="flex-1"><label htmlFor="rem-title" className={label}>Reminder</label>
-                <input id="rem-title" required value={reminderDraft.title} onChange={(e) => setReminderDraft({ ...reminderDraft, title: e.target.value })}
+            <AddRow label="Add reminder" onSubmit={() => {
+              if (!reminderDraft.title.trim() || !reminderDraft.dueAt) return;
+              void s.addReminder({ applicationId: app.id, type: "custom",
+                title: reminderDraft.title.trim(),
+                dueAt: new Date(reminderDraft.dueAt).toISOString() });
+              setReminderDraft({ title: "", dueAt: "" });
+            }}>
+              <div><label htmlFor="rem-title" className={label}>Reminder</label>
+                <input id="rem-title" required value={reminderDraft.title}
+                  onChange={(e) => setReminderDraft({ ...reminderDraft, title: e.target.value })}
                   placeholder="Send thank-you note" className={input} /></div>
               <div><label htmlFor="rem-at" className={label}>Due</label>
-                <input id="rem-at" type="datetime-local" required value={reminderDraft.dueAt} onChange={(e) => setReminderDraft({ ...reminderDraft, dueAt: e.target.value })} className={input} /></div>
-              <Button type="submit" size="sm" aria-label="Add reminder"><Plus className="h-3.5 w-3.5" aria-hidden /></Button>
-            </form>
+                <input id="rem-at" type="datetime-local" required value={reminderDraft.dueAt}
+                  onChange={(e) => setReminderDraft({ ...reminderDraft, dueAt: e.target.value })} className={input} /></div>
+            </AddRow>
           </section>
 
           <section aria-label="Documents">
@@ -301,18 +300,17 @@ export function DetailPanel() {
 
           <section aria-label="Notes">
             <h3 className={sectionTitle}>Notes</h3>
-            <form className="mb-3 flex items-end gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
+            <div className="mb-3">
+              <AddRow label="Add note" onSubmit={() => {
                 if (!noteDraft.trim()) return;
                 void s.addNote(app.id, noteDraft.trim());
                 setNoteDraft("");
               }}>
-              <div className="flex-1"><label htmlFor="note" className={label}>Add a note</label>
-                <textarea id="note" rows={2} value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)}
-                  placeholder="Interview questions, impressions, follow-up plan…" className={input} /></div>
-              <Button type="submit" size="sm">Save</Button>
-            </form>
+                <div className="sm:col-span-2"><label htmlFor="note" className={label}>Add a note</label>
+                  <textarea id="note" rows={2} value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)}
+                    placeholder="Interview questions, impressions, follow-up plan…" className={input} /></div>
+              </AddRow>
+            </div>
             <ul className="flex flex-col gap-2">
               {notes.map((n) => (
                 <li key={n.id} className="rounded-xl bg-sunken px-3 py-2.5 text-sm">

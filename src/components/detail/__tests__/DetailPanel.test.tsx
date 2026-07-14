@@ -75,3 +75,17 @@ describe("DetailPanel buffered editing", () => {
     expect(screen.getByText(/discard unsaved changes/i)).toBeDefined();
   });
 });
+
+describe("DetailPanel add-forms", () => {
+  it("labels every add action explicitly and never says 'Save' outside the footer", () => {
+    render(<DetailPanel />);
+    expect(screen.getByRole("button", { name: /add interview/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /add contact/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /add reminder/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /add note/i })).toBeDefined();
+
+    const saveish = screen.getAllByRole("button").filter((b) => /save/i.test(b.textContent ?? ""));
+    expect(saveish).toHaveLength(1);
+    expect(saveish[0].textContent).toMatch(/save changes/i);
+  });
+});
