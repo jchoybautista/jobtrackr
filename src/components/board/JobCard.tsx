@@ -8,7 +8,7 @@ import { AlarmClock, CalendarClock, FileText, StickyNote } from "lucide-react";
 export interface JobCardProps {
   app: Application;
   tags: Tag[];
-  tints: { cardBg: string; cardBorder: string };
+  tints: { cardBg: string; cardBorder: string; textStrong: string; textMuted: string };
   nudgeDays?: number;
   interview?: Interview;
   noteCount?: number;
@@ -35,8 +35,8 @@ export function JobCard({
           {tags.map((t) => <TagPill key={t.id} name={t.name} />)}
         </span>
       )}
-      <span className="block text-sm font-bold leading-snug">{app.role}</span>
-      <span className="mt-0.5 block text-xs text-ink-3">{meta}</span>
+      <span className="block text-sm font-bold leading-snug" style={{ color: tints.textStrong }}>{app.role}</span>
+      <span className="mt-0.5 block text-xs" style={{ color: tints.textMuted }}>{meta}</span>
 
       {nudgeDays != null && (
         <span className="mt-2 flex items-center gap-1.5 rounded-lg border border-warn-line bg-warn-bg px-2 py-1 text-[11px] font-medium text-warn">
@@ -51,7 +51,7 @@ export function JobCard({
         </span>
       )}
 
-      <span className="mt-2.5 flex items-center justify-between text-[11px] text-ink-3">
+      <span className="mt-2.5 flex items-center justify-between text-[11px]" style={{ color: tints.textMuted }}>
         <span>{app.appliedAt ? `Applied ${relativeDays(app.appliedAt, new Date().toISOString())}` : `Saved ${relativeDays(app.createdAt, new Date().toISOString())}`}</span>
         <span className="flex items-center gap-2.5">
           {docCount > 0 && (

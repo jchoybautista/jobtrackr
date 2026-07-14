@@ -88,7 +88,7 @@ export function ElegantTemplate({ content, accent, accentSoft, photoUrl, ...rest
               {c.fullName || "Your Name"}
             </Text>
             {c.headline ? (
-              <Text style={{ fontSize: 11, fontStyle: "italic", color: "#555555", marginTop: 3 }}>
+              <Text style={{ fontSize: 11, fontStyle: "italic", color: "#555555", marginTop: 10 }}>
                 {c.headline}
               </Text>
             ) : null}

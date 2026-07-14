@@ -35,8 +35,12 @@ export function columnTints(key: PaletteKey) {
   const hex = PALETTE[key].hex;
   return {
     dot: hex,
-    cardBg: mixWithWhite(hex, 0.08),
-    cardBorder: mixWithWhite(hex, 0.3),
-    headerTint: mixWithWhite(hex, 0.15),
+    cardBg: mixWithWhite(hex, 0.3),
+    cardBorder: mixWithWhite(hex, 0.55),
+    headerTint: mixWithWhite(hex, 0.22),
+    // Both hold ≥4.5:1 against cardBg across every palette color (verified: textMuted's
+    // floor is sage at 4.92:1) — darker shades of the card's own hue instead of neutral gray.
+    textStrong: mixWithBlack(hex, 0.4),
+    textMuted: mixWithBlack(hex, 0.48),
   };
 }

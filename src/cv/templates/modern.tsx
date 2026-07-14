@@ -138,7 +138,7 @@ export function ModernTemplate({ content, accent, accentSoft, photoUrl, ...rest 
         >
           <Text style={{ fontSize: 18, fontWeight: 700 }}>{c.fullName || "Your Name"}</Text>
           {c.headline ? (
-            <Text style={{ fontSize: 11, color: "#555555", marginTop: 2 }}>{c.headline}</Text>
+            <Text style={{ fontSize: 11, color: "#555555", marginTop: 8 }}>{c.headline}</Text>
           ) : null}
 
           {mainKeys.map((key) => (

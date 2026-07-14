@@ -79,8 +79,8 @@ export function Column({
           ref={setNodeRef}
           className="flex min-h-24 flex-1 flex-col gap-2.5 rounded-2xl p-1 transition-all duration-200"
           style={isOver ? {
-            background: mixWithWhite(PALETTE[stage.color].hex, 0.18),
-            boxShadow: `0 0 0 2px ${mixWithWhite(PALETTE[stage.color].hex, 0.6)}`,
+            background: mixWithWhite(PALETTE[stage.color].hex, 0.4),
+            boxShadow: `0 0 0 2px ${mixWithWhite(PALETTE[stage.color].hex, 0.65)}`,
           } : undefined}
         >
           {apps.map((app) => (

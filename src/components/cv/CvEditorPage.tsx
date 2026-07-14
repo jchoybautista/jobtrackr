@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, FileQuestion } from "lucide-react";
 import { useApp } from "@/lib/store";
@@ -21,12 +21,26 @@ export function CvEditorPage({ id }: { id: string }) {
   const setCvSections = useApp((s) => s.setCvSections);
 
   // Derive a single object URL from the profile photo Blob, shared by the
-  // toolbar (download) and the live preview; revoked on change/unmount.
-  const photoUrl = useMemo(() => (photo ? URL.createObjectURL(photo) : undefined), [photo]);
+  // toolbar (download) and the live preview. Created inside the effect
+  // (not a render-time useMemo) so React Strict Mode's dev-only
+  // mount→cleanup→mount replay revokes a throwaway URL and mints a fresh
+  // one instead of revoking the URL that's actually in use. A memoized
+  // URL would get revoked immediately, before CvPreview's debounced PDF
+  // render ever fetches it — leaving the photo missing from both the
+  // live preview and downloaded PDFs on the Modern/Elegant templates.
+  const [photoUrl, setPhotoUrl] = useState<string>();
   useEffect(() => {
-    if (!photoUrl) return;
-    return () => URL.revokeObjectURL(photoUrl);
-  }, [photoUrl]);
+    // Synchronizing with an external resource (object URL lifetime), not
+    // mirroring props/state, so the setState-in-effect rule doesn't apply.
+    if (!photo) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPhotoUrl(undefined);
+      return;
+    }
+    const url = URL.createObjectURL(photo);
+    setPhotoUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
 
   // AppShell already gates children on hydration, so a missing cv here is a
   // genuine unknown id — not a pre-load flash.

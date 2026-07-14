@@ -68,7 +68,7 @@ export function ClassicTemplate({ content, accent, accentSoft, ...rest }: Templa
         <View style={{ textAlign: "center", marginBottom: 6 }}>
           <Text style={{ fontSize: 16, fontWeight: 700 }}>{c.fullName || "Your Name"}</Text>
           {c.headline ? (
-            <Text style={{ fontSize: 11, color: "#555555", marginTop: 2 }}>{c.headline}</Text>
+            <Text style={{ fontSize: 11, color: "#555555", marginTop: 6 }}>{c.headline}</Text>
           ) : null}
           {contact.filter(Boolean).length > 0 ? (
             <View
