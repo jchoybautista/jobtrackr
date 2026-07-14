@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Download, Moon, Trash2 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { toCsv } from "@/lib/exportio";
@@ -39,18 +39,20 @@ export function SettingsPage() {
   const dotRef = useRef<HTMLButtonElement>(null);
   const sorted = [...s.stages].sort((a, b) => a.order - b.order);
 
+  // Each buffered card holds an overlay of pending edits on top of the stored
+  // values, rather than a copy of them. Nothing needs re-seeding when the store
+  // changes: clearing the overlay is what "clean" means, so Cancel and a
+  // completed Save are the same gesture, and no state is synced in an effect.
+  const [stageEdits, setStageEdits] = useState<Record<string, string>>({});
+  const [tagEdits, setTagEdits] = useState<Record<string, string>>({});
+  const [prefEdits, setPrefEdits] = useState<Partial<{ nudgeDays: number; currency: string }>>({});
+  const [confirmStage, setConfirmStage] = useState<string | null>(null);
+  const [confirmTag, setConfirmTag] = useState<string | null>(null);
+
   // Stage NAMES buffer behind Save. Reorder, colour, add and delete stay
   // immediate — see the editing contract spec.
   const stageNames = Object.fromEntries(sorted.map((st) => [st.id, st.name]));
-  const [stageDraft, setStageDraft] = useState<Record<string, string>>(stageNames);
-  const [confirmStage, setConfirmStage] = useState<string | null>(null);
-  const stagesKey = sorted.map((st) => `${st.id}:${st.name}`).join("|");
-
-  useEffect(() => {
-    setStageDraft(Object.fromEntries(sorted.map((st) => [st.id, st.name])));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stagesKey]);
-
+  const stageDraft = { ...stageNames, ...stageEdits };
   const stagesDirty = isDirty(stageDraft, stageNames);
 
   const saveStages = () => {
@@ -58,20 +60,13 @@ export function SettingsPage() {
       const next = (stageDraft[st.id] ?? "").trim();
       if (next && next !== st.name) void s.renameStage(st.id, next);
     }
+    setStageEdits({});
     toast("Saved", "success");
   };
 
   // Tag names buffer the same way. Tags do not reorder, so no SortableList.
   const tagNames = Object.fromEntries(s.tags.map((t) => [t.id, t.name]));
-  const [tagDraft, setTagDraft] = useState<Record<string, string>>(tagNames);
-  const [confirmTag, setConfirmTag] = useState<string | null>(null);
-  const tagsKey = s.tags.map((t) => `${t.id}:${t.name}`).join("|");
-
-  useEffect(() => {
-    setTagDraft(Object.fromEntries(s.tags.map((t) => [t.id, t.name])));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tagsKey]);
-
+  const tagDraft = { ...tagNames, ...tagEdits };
   const tagsDirty = isDirty(tagDraft, tagNames);
 
   const saveTags = () => {
@@ -79,21 +74,18 @@ export function SettingsPage() {
       const next = (tagDraft[t.id] ?? "").trim();
       if (next && next !== t.name) void s.renameTag(t.id, next);
     }
+    setTagEdits({});
     toast("Saved", "success");
   };
 
   // Preferences used to commit on every keystroke.
   const prefs = { nudgeDays: s.settings.nudgeDays, currency: s.settings.currency };
-  const [prefDraft, setPrefDraft] = useState(prefs);
-
-  useEffect(() => {
-    setPrefDraft({ nudgeDays: s.settings.nudgeDays, currency: s.settings.currency });
-  }, [s.settings.nudgeDays, s.settings.currency]);
-
+  const prefDraft = { ...prefs, ...prefEdits };
   const prefsDirty = isDirty(prefDraft, prefs);
 
   const savePrefs = () => {
     void s.updateSettings(changedFields(prefDraft, prefs));
+    setPrefEdits({});
     toast("Saved", "success");
   };
 
@@ -145,7 +137,7 @@ export function SettingsPage() {
                 )}
                 <label htmlFor={`stage-${st.id}`} className="sr-only">{st.name} column name</label>
                 <input id={`stage-${st.id}`} value={stageDraft[st.id] ?? ""}
-                  onChange={(e) => setStageDraft({ ...stageDraft, [st.id]: e.target.value })}
+                  onChange={(e) => setStageEdits({ ...stageEdits, [st.id]: e.target.value })}
                   className={`${input} flex-1`} />
                 <Button variant="ghost" size="sm" aria-label={`Delete ${st.name} column`}
                   onClick={() => setConfirmStage(st.id)}>
@@ -186,7 +178,7 @@ export function SettingsPage() {
         </AddRow>
 
         <SaveFooter dirty={stagesDirty} onSave={saveStages}
-          onCancel={() => setStageDraft(stageNames)} className={cardFooter} />
+          onCancel={() => setStageEdits({})} className={cardFooter} />
       </section>
 
       <section aria-label="Tags" className={card}>
@@ -197,7 +189,7 @@ export function SettingsPage() {
             <li key={t.id} className="flex items-center gap-2.5">
               <label htmlFor={`tag-${t.id}`} className="sr-only">{t.name} tag name</label>
               <input id={`tag-${t.id}`} value={tagDraft[t.id] ?? ""}
-                onChange={(e) => setTagDraft({ ...tagDraft, [t.id]: e.target.value })}
+                onChange={(e) => setTagEdits({ ...tagEdits, [t.id]: e.target.value })}
                 className={`${input} flex-1`} />
               <Button variant="ghost" size="sm" aria-label={`Delete tag ${t.name}`}
                 onClick={() => setConfirmTag(t.id)}>
@@ -234,7 +226,7 @@ export function SettingsPage() {
         </AddRow>
 
         <SaveFooter dirty={tagsDirty} onSave={saveTags}
-          onCancel={() => setTagDraft(tagNames)} className={cardFooter} />
+          onCancel={() => setTagEdits({})} className={cardFooter} />
       </section>
 
       <section aria-label="Preferences" className={card}>
@@ -246,19 +238,19 @@ export function SettingsPage() {
               Follow-up nudge after (days)
             </label>
             <input id="nudge-days" type="number" min={1} max={60} value={prefDraft.nudgeDays}
-              onChange={(e) => setPrefDraft({ ...prefDraft, nudgeDays: Math.max(1, Number(e.target.value) || 7) })}
+              onChange={(e) => setPrefEdits({ ...prefEdits, nudgeDays: Math.max(1, Number(e.target.value) || 7) })}
               className={`${input} w-28`} />
           </div>
           <div>
             <label htmlFor="currency" className="mb-1 block text-xs font-semibold text-ink-2">Default currency</label>
             <input id="currency" value={prefDraft.currency}
-              onChange={(e) => setPrefDraft({ ...prefDraft, currency: e.target.value.toUpperCase() })}
+              onChange={(e) => setPrefEdits({ ...prefEdits, currency: e.target.value.toUpperCase() })}
               className={`${input} w-28`} />
           </div>
         </div>
 
         <SaveFooter dirty={prefsDirty} onSave={savePrefs}
-          onCancel={() => setPrefDraft(prefs)} className={cardFooter} />
+          onCancel={() => setPrefEdits({})} className={cardFooter} />
       </section>
 
       <section aria-label="Appearance" className={card}>

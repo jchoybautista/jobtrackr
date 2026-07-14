@@ -31,34 +31,42 @@ const seed = (a: Application): Draft => ({
 export function DetailPanel() {
   const s = useApp();
   const app = s.applications.find((a) => a.id === s.selectedAppId) ?? null;
+  if (!app) return null;
+  // Keying on the id remounts the body when a different application is
+  // selected, so the draft is re-seeded without syncing state in an effect.
+  return <PanelBody key={app.id} app={app} />;
+}
+
+function PanelBody({ app }: { app: Application }) {
+  const s = useApp();
   const panelRef = useRef<HTMLDivElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<Draft>(() => seed(app));
   const [noteDraft, setNoteDraft] = useState("");
   const [ivDraft, setIvDraft] = useState({ roundType: "phone" as InterviewRound, scheduledAt: "", locationOrLink: "" });
   const [contactDraft, setContactDraft] = useState({ name: "", role: "", email: "" });
   const [reminderDraft, setReminderDraft] = useState({ title: "", dueAt: "" });
-  const requestCloseRef = useRef(() => {});
 
-  // Re-seed when a different application is selected, so no draft state
-  // bleeds between records.
-  useEffect(() => {
-    if (app) setDraft(seed(app));
-    setConfirmDiscard(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [app?.id]);
+  const stored = seed(app);
+  const dirty = isDirty(draft, stored);
 
   useEffect(() => {
-    if (!app) return;
     panelRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") requestCloseRef.current(); };
+  }, []);
+
+  // Re-registered when `dirty` flips so Escape always sees current state —
+  // cheaper and safer than smuggling the handler through a ref.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (dirty) setConfirmDiscard(true);
+      else s.selectApp(null);
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [app?.id]);
+  }, [dirty, s]);
 
-  if (!app || !draft) return null;
   const nowIso = new Date().toISOString();
   const interviews = s.interviews.filter((i) => i.applicationId === app.id)
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
@@ -71,8 +79,6 @@ export function DetailPanel() {
   const unlinkedDocs = s.cvdocs.filter((c) => !c.applicationId);
   const hasLink = /^https?:\/\//.test(app.url ?? "");
 
-  const stored = seed(app);
-  const dirty = isDirty(draft, stored);
   const set = (patch: Partial<Draft>) => setDraft({ ...draft, ...patch });
 
   const saveChanges = () => {
@@ -84,7 +90,6 @@ export function DetailPanel() {
     if (dirty) { setConfirmDiscard(true); return; }
     s.selectApp(null);
   };
-  requestCloseRef.current = requestClose;
 
   return (
     <AnimatePresence>
