@@ -5,36 +5,59 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Trash2, X, Plus, ExternalLink, BellRing, FileText } from "lucide-react";
 import { useApp } from "@/lib/store";
-import type { InterviewRound, WorkMode } from "@/lib/types";
+import type { Application, InterviewRound, WorkMode } from "@/lib/types";
 import { TEMPLATE_META } from "@/cv/types";
 import { Button } from "@/components/ui/Button";
+import { SaveFooter } from "@/components/ui/SaveFooter";
 import { toast } from "@/components/ui/Toast";
+import { isDirty, changedFields } from "@/lib/draft";
 import { relativeDays, shortDate } from "@/lib/format";
 
 const input = "w-full rounded-xl border border-line px-3 py-2 text-sm placeholder:text-ink-3";
 const label = "mb-1 block text-[11px] font-semibold text-ink-2";
 const sectionTitle = "mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-3";
 
+/** The fields that buffer. Everything else in the panel (stage, list
+ *  add/remove, delete) commits immediately — see the editing contract spec. */
+type Draft = Pick<Application,
+  "company" | "role" | "location" | "workMode" | "salaryMin" | "salaryMax" | "source" | "tagIds">;
+
+const seed = (a: Application): Draft => ({
+  company: a.company, role: a.role, location: a.location, workMode: a.workMode,
+  salaryMin: a.salaryMin, salaryMax: a.salaryMax, source: a.source, tagIds: a.tagIds,
+});
+
 export function DetailPanel() {
   const s = useApp();
   const app = s.applications.find((a) => a.id === s.selectedAppId) ?? null;
   const panelRef = useRef<HTMLDivElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [draft, setDraft] = useState<Draft | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [ivDraft, setIvDraft] = useState({ roundType: "phone" as InterviewRound, scheduledAt: "", locationOrLink: "" });
   const [contactDraft, setContactDraft] = useState({ name: "", role: "", email: "" });
   const [reminderDraft, setReminderDraft] = useState({ title: "", dueAt: "" });
+  const requestCloseRef = useRef(() => {});
+
+  // Re-seed when a different application is selected, so no draft state
+  // bleeds between records.
+  useEffect(() => {
+    if (app) setDraft(seed(app));
+    setConfirmDiscard(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app?.id]);
 
   useEffect(() => {
     if (!app) return;
     panelRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") s.selectApp(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") requestCloseRef.current(); };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app?.id]);
 
-  if (!app) return null;
+  if (!app || !draft) return null;
   const nowIso = new Date().toISOString();
   const interviews = s.interviews.filter((i) => i.applicationId === app.id)
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
@@ -47,14 +70,26 @@ export function DetailPanel() {
   const unlinkedDocs = s.cvdocs.filter((c) => !c.applicationId);
   const hasLink = /^https?:\/\//.test(app.url ?? "");
 
-  const save = (patch: Parameters<typeof s.updateApplication>[1]) =>
-    void s.updateApplication(app.id, patch);
+  const stored = seed(app);
+  const dirty = isDirty(draft, stored);
+  const set = (patch: Partial<Draft>) => setDraft({ ...draft, ...patch });
+
+  const saveChanges = () => {
+    void s.updateApplication(app.id, changedFields(draft, stored));
+    toast("Saved", "success");
+  };
+
+  const requestClose = () => {
+    if (dirty) { setConfirmDiscard(true); return; }
+    s.selectApp(null);
+  };
+  requestCloseRef.current = requestClose;
 
   return (
     <AnimatePresence>
       <motion.div key="backdrop" className="fixed inset-0 z-40 bg-ink/25"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={() => s.selectApp(null)} aria-hidden />
+        onClick={requestClose} aria-hidden />
       <motion.div
         key={app.id} ref={panelRef} tabIndex={-1}
         role="dialog" aria-modal="true" aria-label={`${app.role} at ${app.company} details`}
@@ -84,7 +119,7 @@ export function DetailPanel() {
               className="rounded-full p-2 text-ink-3 hover:bg-danger-bg hover:text-danger">
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>
-            <button type="button" aria-label="Close details" onClick={() => s.selectApp(null)}
+            <button type="button" aria-label="Close details" onClick={requestClose}
               className="rounded-full p-2 text-ink-3 hover:bg-sunken">
               <X className="h-4 w-4" aria-hidden />
             </button>
@@ -96,34 +131,32 @@ export function DetailPanel() {
             <h3 className={sectionTitle}>Overview</h3>
             <div className="grid grid-cols-2 gap-3">
               <div><label htmlFor="f-company" className={label}>Company</label>
-                <input id="f-company" defaultValue={app.company} onBlur={(e) => e.target.value !== app.company && save({ company: e.target.value })} className={input} /></div>
+                <input id="f-company" value={draft.company}
+                  onChange={(e) => set({ company: e.target.value })} className={input} /></div>
               <div><label htmlFor="f-role" className={label}>Role</label>
-                <input id="f-role" defaultValue={app.role} onBlur={(e) => e.target.value !== app.role && save({ role: e.target.value })} className={input} /></div>
+                <input id="f-role" value={draft.role}
+                  onChange={(e) => set({ role: e.target.value })} className={input} /></div>
               <div><label htmlFor="f-location" className={label}>Location</label>
-                <input id="f-location" defaultValue={app.location ?? ""} onBlur={(e) => e.target.value !== (app.location ?? "") && save({ location: e.target.value || undefined })} className={input} /></div>
+                <input id="f-location" value={draft.location ?? ""}
+                  onChange={(e) => set({ location: e.target.value })} className={input} /></div>
               <div><label htmlFor="f-mode" className={label}>Work mode</label>
-                <select id="f-mode" value={app.workMode ?? ""} onChange={(e) => {
-                  const v = (e.target.value || undefined) as WorkMode | undefined;
-                  if (v !== app.workMode) save({ workMode: v });
-                }} className={input}>
+                <select id="f-mode" value={draft.workMode ?? ""}
+                  onChange={(e) => set({ workMode: (e.target.value || undefined) as WorkMode | undefined })}
+                  className={input}>
                   <option value="">—</option><option value="remote">Remote</option>
                   <option value="hybrid">Hybrid</option><option value="onsite">Onsite</option>
                 </select></div>
               <div><label htmlFor="f-smin" className={label}>Salary min</label>
-                <input id="f-smin" type="number" defaultValue={app.salaryMin ?? ""} onBlur={(e) => {
-                  const v = e.target.value ? Number(e.target.value) : undefined;
-                  if (v !== app.salaryMin) save({ salaryMin: v });
-                }} className={input} /></div>
+                <input id="f-smin" type="number" value={draft.salaryMin ?? ""}
+                  onChange={(e) => set({ salaryMin: e.target.value ? Number(e.target.value) : undefined })}
+                  className={input} /></div>
               <div><label htmlFor="f-smax" className={label}>Salary max</label>
-                <input id="f-smax" type="number" defaultValue={app.salaryMax ?? ""} onBlur={(e) => {
-                  const v = e.target.value ? Number(e.target.value) : undefined;
-                  if (v !== app.salaryMax) save({ salaryMax: v });
-                }} className={input} /></div>
+                <input id="f-smax" type="number" value={draft.salaryMax ?? ""}
+                  onChange={(e) => set({ salaryMax: e.target.value ? Number(e.target.value) : undefined })}
+                  className={input} /></div>
               <div className="col-span-2"><label htmlFor="f-source" className={label}>Source</label>
-                <input id="f-source" defaultValue={app.source ?? ""} onBlur={(e) => {
-                  const v = e.target.value || undefined;
-                  if (v !== (app.source ?? undefined)) save({ source: v });
-                }} className={input} /></div>
+                <input id="f-source" value={draft.source ?? ""}
+                  onChange={(e) => set({ source: e.target.value })} className={input} /></div>
             </div>
           </section>
 
@@ -131,10 +164,10 @@ export function DetailPanel() {
             <h3 className={sectionTitle}>Tags</h3>
             <div className="flex flex-wrap gap-1.5">
               {s.tags.map((t) => {
-                const on = app.tagIds.includes(t.id);
+                const on = draft.tagIds.includes(t.id);
                 return (
                   <button key={t.id} type="button" aria-pressed={on}
-                    onClick={() => save({ tagIds: on ? app.tagIds.filter((x) => x !== t.id) : [...app.tagIds, t.id] })}
+                    onClick={() => set({ tagIds: on ? draft.tagIds.filter((x) => x !== t.id) : [...draft.tagIds, t.id] })}
                     className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                       on ? "border-ink bg-ink text-white" : "border-line bg-surface text-ink-2 hover:bg-sunken"}`}>
                     {t.name}
@@ -316,8 +349,33 @@ export function DetailPanel() {
           </section>
         </div>
 
+        <SaveFooter
+          dirty={dirty}
+          onSave={saveChanges}
+          onCancel={() => setDraft(stored)}
+          className="sticky bottom-0 z-10"
+        />
+
+        {confirmDiscard && (
+          <div role="alertdialog" aria-modal="true" aria-label="Discard unsaved changes"
+            className="sticky bottom-0 z-20 border-t border-line-2 bg-surface px-6 py-4">
+            <p className="mb-3 text-sm font-medium">Discard unsaved changes?</p>
+            <div className="flex justify-end gap-2">
+              {/* Focus rests on the non-destructive choice, so a reflexive
+                  second Escape or Enter cannot destroy the draft. */}
+              <Button variant="secondary" size="sm" autoFocus onClick={() => setConfirmDiscard(false)}>
+                Keep editing
+              </Button>
+              <Button variant="danger" size="sm"
+                onClick={() => { setConfirmDiscard(false); s.selectApp(null); }}>
+                Discard
+              </Button>
+            </div>
+          </div>
+        )}
+
         {confirmDelete && (
-          <div className="sticky bottom-0 border-t border-line-2 bg-surface px-6 py-4">
+          <div className="sticky bottom-0 z-20 border-t border-line-2 bg-surface px-6 py-4">
             <p className="mb-3 text-sm font-medium">Delete this application and all its notes, contacts, and interviews?</p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
