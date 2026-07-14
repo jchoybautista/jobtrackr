@@ -1,5 +1,14 @@
 import { StyleSheet, Text, View } from "@react-pdf/renderer";
 
+/**
+ * Returns `url` only when it is a safe http(s) URL, else `undefined`. Guards
+ * user-supplied link/project URLs before they become live PDF Link annotations
+ * (blocks javascript:, data:, file: and other schemes).
+ */
+export function safeHref(url?: string): string | undefined {
+  return url && /^https?:\/\//i.test(url) ? url : undefined;
+}
+
 export const baseStyles = StyleSheet.create({
   page: {
     paddingTop: 36,

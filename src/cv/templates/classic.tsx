@@ -1,7 +1,7 @@
 import { Document, Link, Page, Text, View } from "@react-pdf/renderer";
 import type { ReactNode } from "react";
 import { SECTION_LABELS, type SectionKey } from "@/cv/types";
-import { baseStyles, PageFooter, SectionTitle } from "./shared";
+import { baseStyles, PageFooter, safeHref, SectionTitle } from "./shared";
 import { renderMainSection } from "./sections";
 import { visibleSections, type TemplateProps } from "./index";
 
@@ -23,11 +23,17 @@ export function ClassicTemplate({ content, accent, accentSoft, ...rest }: Templa
     c.location ? <Text key="loc">{c.location}</Text> : null,
     ...c.links
       .filter((l) => l.url.trim())
-      .map((l) => (
-        <Link key={l.id} src={l.url} style={{ color: "#1a1a1a", textDecoration: "none" }}>
-          {l.label.trim() || l.url}
-        </Link>
-      )),
+      .map((l) => {
+        const href = safeHref(l.url);
+        const text = l.label.trim() || l.url;
+        return href ? (
+          <Link key={l.id} src={href} style={{ color: "#1a1a1a", textDecoration: "none" }}>
+            {text}
+          </Link>
+        ) : (
+          <Text key={l.id} style={{ color: "#1a1a1a", textDecoration: "none" }}>{text}</Text>
+        );
+      }),
   ];
 
   /** Classic-specific bodies (inline skills/languages); everything else is shared. */

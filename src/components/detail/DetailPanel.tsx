@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Trash2, X, Plus, ExternalLink, BellRing, FileText } from "lucide-react";
 import { useApp } from "@/lib/store";
 import type { InterviewRound, WorkMode } from "@/lib/types";
-import { getTemplate } from "@/cv/templates";
+import { TEMPLATE_META } from "@/cv/types";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
 import { relativeDays, shortDate } from "@/lib/format";
@@ -17,7 +17,6 @@ const sectionTitle = "mb-2 text-[10px] font-bold uppercase tracking-wider text-i
 
 export function DetailPanel() {
   const s = useApp();
-  const router = useRouter();
   const app = s.applications.find((a) => a.id === s.selectedAppId) ?? null;
   const panelRef = useRef<HTMLDivElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -243,11 +242,11 @@ export function DetailPanel() {
                   <span className="flex min-w-0 items-center gap-2">
                     <FileText className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
                     <span className="min-w-0 truncate"><span className="font-semibold">{cv.name}</span>
-                      <span className="text-ink-3"> · {getTemplate(cv.templateId).name}</span></span>
+                      <span className="text-ink-3"> · {TEMPLATE_META[cv.templateId].name}</span></span>
                   </span>
                   <span className="flex shrink-0 items-center gap-1">
-                    <button type="button" onClick={() => router.push(`/cv/${cv.id}`)}
-                      className="rounded-full px-2 py-1 text-xs font-semibold text-ink-2 hover:bg-sunken">Open</button>
+                    <Link href={`/cv/${cv.id}`}
+                      className="rounded-full px-2 py-1 text-xs font-semibold text-ink-2 hover:bg-sunken">Open</Link>
                     <button type="button" aria-label={`Unlink ${cv.name}`} onClick={() => void s.updateCv(cv.id, { applicationId: undefined })}
                       className="rounded-full p-1.5 text-ink-3 hover:bg-sunken"><X className="h-3.5 w-3.5" aria-hidden /></button>
                   </span>
@@ -261,7 +260,7 @@ export function DetailPanel() {
                 <select id="attach-cv" value="" className={input}
                   onChange={(e) => { if (e.target.value) void s.updateCv(e.target.value, { applicationId: app.id }); }}>
                   <option value="">Attach a CV…</option>
-                  {unlinkedDocs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name} · {getTemplate(cv.templateId).name}</option>)}
+                  {unlinkedDocs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name} · {TEMPLATE_META[cv.templateId].name}</option>)}
                 </select>
               </>
             )}

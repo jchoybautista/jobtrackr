@@ -1,7 +1,7 @@
 import { Document, Image, Link, Page, Text, View } from "@react-pdf/renderer";
 import { SECTION_LABELS, type SectionKey } from "@/cv/types";
 import { mixWithWhite } from "@/lib/palette";
-import { baseStyles, PageFooter, SectionTitle } from "./shared";
+import { baseStyles, PageFooter, safeHref, SectionTitle } from "./shared";
 import { renderMainSection } from "./sections";
 import { visibleSections, type TemplateProps } from "./index";
 
@@ -82,15 +82,23 @@ export function ModernTemplate({ content, accent, accentSoft, photoUrl, ...rest 
           {links.length > 0 ? (
             <View>
               <SidebarHeading accent={accent}>Links</SidebarHeading>
-              {links.map((l) => (
-                <Link
-                  key={l.id}
-                  src={l.url}
-                  style={{ color: "#1a1a1a", textDecoration: "none", marginBottom: 2 }}
-                >
-                  {l.label.trim() || l.url}
-                </Link>
-              ))}
+              {links.map((l) => {
+                const href = safeHref(l.url);
+                const text = l.label.trim() || l.url;
+                return href ? (
+                  <Link
+                    key={l.id}
+                    src={href}
+                    style={{ color: "#1a1a1a", textDecoration: "none", marginBottom: 2 }}
+                  >
+                    {text}
+                  </Link>
+                ) : (
+                  <Text key={l.id} style={{ color: "#1a1a1a", textDecoration: "none", marginBottom: 2 }}>
+                    {text}
+                  </Text>
+                );
+              })}
             </View>
           ) : null}
 

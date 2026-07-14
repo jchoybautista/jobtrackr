@@ -1,5 +1,5 @@
 import type React from "react";
-import type { CvContent, CvSection, SectionKey, TemplateId } from "@/cv/types";
+import { TEMPLATE_META, type CvContent, type CvSection, type SectionKey, type TemplateId } from "@/cv/types";
 import { ClassicTemplate } from "./classic";
 import { ElegantTemplate } from "./elegant";
 import { ModernTemplate } from "./modern";
@@ -26,22 +26,19 @@ export interface CvTemplate {
 export const TEMPLATES: CvTemplate[] = [
   {
     id: "classic",
-    name: "Classic",
-    atsSafe: true,
+    ...TEMPLATE_META.classic,
     note: "Single column, standard headings — parses cleanly in every ATS.",
     render: ClassicTemplate,
   },
   {
     id: "modern",
-    name: "Modern",
-    atsSafe: false,
+    ...TEMPLATE_META.modern,
     note: "Two-column layout with photo — great for human readers; some ATS parsers struggle with columns.",
     render: ModernTemplate,
   },
   {
     id: "elegant",
-    name: "Elegant",
-    atsSafe: false,
+    ...TEMPLATE_META.elegant,
     note: "Serif headings and generous whitespace — a quiet, premium read.",
     render: ElegantTemplate,
   },

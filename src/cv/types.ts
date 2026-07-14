@@ -41,6 +41,18 @@ export const DEFAULT_SECTIONS: CvSection[] = [
 
 export type TemplateId = "classic" | "modern" | "elegant";
 
+/**
+ * react-pdf-FREE template metadata (display name + ATS-safety flag).
+ * Lives here — a module with no react-pdf dependency — so Board/Dashboard code
+ * can read a template's name without pulling the ~1.4MB @react-pdf/renderer
+ * chunk. The full TEMPLATES registry (src/cv/templates) mirrors these values.
+ */
+export const TEMPLATE_META: Record<TemplateId, { name: string; atsSafe: boolean }> = {
+  classic: { name: "Classic", atsSafe: true },
+  modern: { name: "Modern", atsSafe: false },
+  elegant: { name: "Elegant", atsSafe: false },
+};
+
 export interface Profile { id: "singleton"; content: CvContent; photo?: Blob; updatedAt: string }
 
 export interface CvDoc {

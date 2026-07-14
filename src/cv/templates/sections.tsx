@@ -2,7 +2,7 @@ import { Link, Text, View } from "@react-pdf/renderer";
 import type { ReactNode } from "react";
 import { formatMonthYear, formatRange } from "@/cv/dates";
 import type { CvContent, SectionKey } from "@/cv/types";
-import { baseStyles, BulletList, MetaText, Row } from "./shared";
+import { baseStyles, BulletList, MetaText, Row, safeHref } from "./shared";
 
 /** A short block of body copy with a little breathing room above it. */
 export function Paragraph({ children }: { children: string }) {
@@ -60,18 +60,25 @@ export function renderMainSection(
       ));
 
     case "projects":
-      return c.projects.map((p) => (
+      return c.projects.map((p) => {
+        const href = safeHref(p.url);
+        return (
         <View key={p.id} style={{ marginBottom: 6 + gap }} wrap={false}>
           <Row left={p.name} right={undefined} />
           {p.url ? (
-            <Link src={p.url} style={{ ...baseStyles.meta, textDecoration: "none" }}>
-              {p.url}
-            </Link>
+            href ? (
+              <Link src={href} style={{ ...baseStyles.meta, textDecoration: "none" }}>
+                {p.url}
+              </Link>
+            ) : (
+              <Text style={{ ...baseStyles.meta, textDecoration: "none" }}>{p.url}</Text>
+            )
           ) : null}
           {p.description ? <Paragraph>{p.description}</Paragraph> : null}
           <BulletList items={p.bullets} />
         </View>
-      ));
+        );
+      });
 
     case "certifications":
       return c.certifications.map((e) => (
