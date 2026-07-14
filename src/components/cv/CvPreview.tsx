@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, useEffect, useState, useTransition, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { Loader2, RotateCw } from "lucide-react";
 import { renderCvBlob } from "@/cv/pdf";
 import { Button } from "@/components/ui/Button";
@@ -44,6 +44,21 @@ function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
   const [error, setError] = useState<Error | null>(null);
   const [, startTransition] = useTransition();
 
+  // Object-URL lifecycle. Chrome's PDF plugin fetches a blob: URL asynchronously
+  // (and re-fetches it once more after the iframe navigates), so revoking a URL
+  // whose fetch is still in flight logs `blob: ERR_FILE_NOT_FOUND`. Rules:
+  //  - the live URL is never revoked while it is on screen;
+  //  - a superseded URL is revoked only once we've seen it finish loading at
+  //    least once (its own `onLoad` fired) — by then the plugin has read the
+  //    blob and a revoke cannot race a live fetch;
+  //  - a URL superseded *before* it ever loaded (e.g. the first render is
+  //    replaced almost instantly on mount) is held until unmount, when the
+  //    iframe is gone and nothing can request it.
+  // Net: no in-flight fetch is ever revoked (no 404) and every URL is freed.
+  const liveUrl = useRef<string | null>(null);
+  const staleUrls = useRef<string[]>([]);
+  const loadedUrls = useRef<Set<string>>(new Set());
+
   // Debounced (500ms) regeneration: every cv/photo change resets the timer so
   // rapid typing coalesces into a single render. useTransition keeps the URL
   // swap non-urgent so keystrokes stay responsive.
@@ -53,8 +68,10 @@ function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
       setRendering(true);
       renderCvBlob(cv, photoUrl)
         .then((blob) => {
-          if (cancelled) return;
+          if (cancelled) return; // superseded before commit — blob is GC'd, never URL'd
           const next = URL.createObjectURL(blob);
+          if (liveUrl.current) staleUrls.current.push(liveUrl.current);
+          liveUrl.current = next;
           startTransition(() => setUrl(next));
         })
         .catch((e) => {
@@ -70,11 +87,29 @@ function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
     };
   }, [cv, photoUrl]);
 
-  // Revoke the previous object URL when it is replaced or on unmount — no leak.
+  // Revoke any remaining URLs on unmount — no leak.
   useEffect(() => {
-    if (!url) return;
-    return () => URL.revokeObjectURL(url);
-  }, [url]);
+    return () => {
+      staleUrls.current.forEach((u) => URL.revokeObjectURL(u));
+      staleUrls.current = [];
+      if (liveUrl.current) URL.revokeObjectURL(liveUrl.current);
+      liveUrl.current = null;
+    };
+  }, []);
+
+  // The iframe finished loading its current src. Record it as loaded, then
+  // revoke any superseded URL that has itself already loaded (safe to free);
+  // keep never-loaded superseded URLs until unmount so we never revoke one whose
+  // fetch may still be in flight.
+  const handleIframeLoad = () => {
+    if (liveUrl.current) loadedUrls.current.add(liveUrl.current);
+    staleUrls.current = staleUrls.current.filter((u) => {
+      if (!loadedUrls.current.has(u)) return true;
+      URL.revokeObjectURL(u);
+      loadedUrls.current.delete(u);
+      return false;
+    });
+  };
 
   // Route async render failures through the error boundary.
   if (error) throw error;
@@ -85,6 +120,7 @@ function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
         <iframe
           title="CV preview (PDF)"
           src={url}
+          onLoad={handleIframeLoad}
           className="h-full w-full rounded-2xl border border-line-2 bg-white"
         />
       ) : (
