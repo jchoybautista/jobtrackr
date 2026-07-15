@@ -7,6 +7,7 @@ import { parseQuickAdd } from "@/lib/quickadd";
 import type { WorkMode } from "@/lib/types";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 import { toast } from "@/components/ui/Toast";
 
 const input = "w-full rounded-xl border border-line px-3.5 py-2.5 text-sm placeholder:text-ink-3";
@@ -88,12 +89,12 @@ export function AddJobDialog({ open, onClose }: { open: boolean; onClose: () => 
           </div>
           <div>
             <label htmlFor="workMode" className={label}>Work mode</label>
-            <select id="workMode" value={form.workMode} onChange={(e) => set({ workMode: e.target.value as WorkMode | "" })} className={input}>
+            <Select id="workMode" value={form.workMode} onChange={(e) => set({ workMode: e.target.value as WorkMode | "" })} className={input}>
               <option value="">—</option>
               <option value="remote">Remote</option>
               <option value="hybrid">Hybrid</option>
               <option value="onsite">Onsite</option>
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="salaryMin" className={label}>Salary min</label>
@@ -109,9 +110,9 @@ export function AddJobDialog({ open, onClose }: { open: boolean; onClose: () => 
           </div>
           <div>
             <label htmlFor="stage" className={label}>Column</label>
-            <select id="stage" value={form.stageId || stages[0]?.id} onChange={(e) => set({ stageId: e.target.value })} className={input}>
+            <Select id="stage" value={form.stageId || stages[0]?.id} onChange={(e) => set({ stageId: e.target.value })} className={input}>
               {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="col-span-2">
             <label htmlFor="url" className={label}>Posting URL</label>

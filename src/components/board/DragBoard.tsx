@@ -3,9 +3,21 @@
 import { useState } from "react";
 import {
   DndContext, DragOverlay, KeyboardSensor, PointerSensor,
-  closestCorners, useSensor, useSensors, type DragEndEvent, type DragStartEvent,
+  closestCorners, pointerWithin,
+  useSensor, useSensors,
+  type CollisionDetection, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+
+/** Resolve drops by where the pointer actually is, falling back to corner
+ *  distance only for keyboard dragging (which has no pointer). A dragged card
+ *  is ~230px wide, so its corners straddle two columns near a boundary and
+ *  `closestCorners` alone would drop it in the wrong column — or snap it back
+ *  to its source — even while the cursor is clearly inside the target. */
+const collisionDetection: CollisionDetection = (args) => {
+  const byPointer = pointerWithin(args);
+  return byPointer.length > 0 ? byPointer : closestCorners(args);
+};
 import { useApp } from "@/lib/store";
 import { columnTints } from "@/lib/palette";
 import { JobCard } from "./JobCard";
@@ -69,7 +81,7 @@ export function DragBoard({ children }: { children: React.ReactNode }) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={collisionDetection}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}

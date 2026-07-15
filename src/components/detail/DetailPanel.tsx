@@ -9,6 +9,7 @@ import type { Application, InterviewRound, WorkMode } from "@/lib/types";
 import { TEMPLATE_META } from "@/cv/types";
 import { Button } from "@/components/ui/Button";
 import { AddRow } from "@/components/ui/AddRow";
+import { Select } from "@/components/ui/Select";
 import { SaveFooter } from "@/components/ui/SaveFooter";
 import { toast } from "@/components/ui/Toast";
 import { isDirty, changedFields } from "@/lib/draft";
@@ -117,10 +118,11 @@ function PanelBody({ app }: { app: Application }) {
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <label htmlFor="detail-stage" className="sr-only">Stage</label>
-            <select id="detail-stage" value={app.stageId} className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-semibold"
+            <Select id="detail-stage" value={app.stageId} wrapperClassName="inline-flex"
+              className="rounded-full border border-line bg-surface py-1.5 pl-3.5 text-xs font-semibold"
               onChange={(e) => void s.moveApplication(app.id, e.target.value, 0)}>
               {s.stages.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
-            </select>
+            </Select>
             <button type="button" aria-label="Delete application" onClick={() => setConfirmDelete(true)}
               className="rounded-full p-2 text-ink-3 hover:bg-danger-bg hover:text-danger">
               <Trash2 className="h-4 w-4" aria-hidden />
@@ -146,12 +148,12 @@ function PanelBody({ app }: { app: Application }) {
                 <input id="f-location" value={draft.location ?? ""}
                   onChange={(e) => set({ location: e.target.value })} className={input} /></div>
               <div><label htmlFor="f-mode" className={label}>Work mode</label>
-                <select id="f-mode" value={draft.workMode ?? ""}
+                <Select id="f-mode" value={draft.workMode ?? ""}
                   onChange={(e) => set({ workMode: (e.target.value || undefined) as WorkMode | undefined })}
                   className={input}>
                   <option value="">—</option><option value="remote">Remote</option>
                   <option value="hybrid">Hybrid</option><option value="onsite">Onsite</option>
-                </select></div>
+                </Select></div>
               <div><label htmlFor="f-smin" className={label}>Salary min</label>
                 <input id="f-smin" type="number" value={draft.salaryMin ?? ""}
                   onChange={(e) => set({ salaryMin: e.target.value ? Number(e.target.value) : undefined })}
@@ -204,11 +206,11 @@ function PanelBody({ app }: { app: Application }) {
               setIvDraft({ roundType: "phone", scheduledAt: "", locationOrLink: "" });
             }}>
               <div><label htmlFor="iv-type" className={label}>Round</label>
-                <select id="iv-type" value={ivDraft.roundType}
+                <Select id="iv-type" value={ivDraft.roundType}
                   onChange={(e) => setIvDraft({ ...ivDraft, roundType: e.target.value as InterviewRound })}
                   className={input}>
                   {(["phone", "technical", "panel", "final", "other"] as const).map((r) => <option key={r} value={r}>{r}</option>)}
-                </select></div>
+                </Select></div>
               <div><label htmlFor="iv-at" className={label}>When</label>
                 <input id="iv-at" type="datetime-local" required value={ivDraft.scheduledAt}
                   onChange={(e) => setIvDraft({ ...ivDraft, scheduledAt: e.target.value })} className={input} /></div>
@@ -294,11 +296,11 @@ function PanelBody({ app }: { app: Application }) {
             {unlinkedDocs.length > 0 && (
               <>
                 <label htmlFor="attach-cv" className="sr-only">Attach a CV</label>
-                <select id="attach-cv" value="" className={input}
+                <Select id="attach-cv" value="" className={input}
                   onChange={(e) => { if (e.target.value) void s.updateCv(e.target.value, { applicationId: app.id }); }}>
                   <option value="">Attach a CV…</option>
                   {unlinkedDocs.map((cv) => <option key={cv.id} value={cv.id}>{cv.name} · {TEMPLATE_META[cv.templateId].name}</option>)}
-                </select>
+                </Select>
               </>
             )}
           </section>
