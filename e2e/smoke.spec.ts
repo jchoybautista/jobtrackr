@@ -60,3 +60,29 @@ test("cv builder: profile → new cv → pdf download", async ({ page }) => {
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("Smoke CV.pdf");
 });
+
+test("detail panel edits persist only after Save", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Frontend Engineer/ }).first().click();
+
+  // Not name-matched: the dialog's accessible name embeds the role, which this
+  // test changes.
+  const panel = page.getByRole("dialog");
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText("No changes")).toBeVisible();
+
+  await panel.getByLabel("Role", { exact: true }).fill("Staff Engineer");
+  await expect(panel.getByText("Unsaved changes")).toBeVisible();
+
+  // Escape must not silently discard an unsaved edit.
+  await page.keyboard.press("Escape");
+  await expect(page.getByText("Discard unsaved changes?")).toBeVisible();
+  await page.getByRole("button", { name: "Keep editing" }).click();
+
+  await panel.getByRole("button", { name: "Save changes" }).click();
+  await expect(panel.getByText("No changes")).toBeVisible();
+
+  await panel.getByRole("button", { name: "Close details" }).click();
+  await page.reload();
+  await expect(page.getByText("Staff Engineer").first()).toBeVisible();
+});

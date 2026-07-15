@@ -20,7 +20,7 @@ export const Button = forwardRef<HTMLButtonElement,
   return (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full transition-all duration-150 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer ${styles[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full transition-all duration-150 active:scale-[0.98] disabled:opacity-100 disabled:bg-sunken disabled:text-ink-3 disabled:border-line disabled:cursor-not-allowed disabled:pointer-events-none cursor-pointer ${styles[variant]} ${sizes[size]} ${className}`}
       {...props}
     />
   );

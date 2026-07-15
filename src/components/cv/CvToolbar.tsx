@@ -7,6 +7,7 @@ import { TEMPLATES } from "@/cv/templates";
 import { PALETTE } from "@/lib/palette";
 import { ColorPicker } from "@/components/board/ColorPicker";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 import { toast } from "@/components/ui/Toast";
 import { downloadCv } from "@/cv/pdf";
 import { MiniMock } from "./MiniMock";
@@ -119,11 +120,12 @@ export function CvToolbar({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
         <label htmlFor="cv-link-app" className="text-xs font-semibold text-ink-2">
           Linked to
         </label>
-        <select
+        <Select
           id="cv-link-app"
           value={cv.applicationId ?? ""}
           onChange={(e) => void updateCv(cv.id, { applicationId: e.target.value || undefined })}
-          className="max-w-44 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink focus-visible:outline-2 focus-visible:outline-ink"
+          wrapperClassName="max-w-44"
+          className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink focus-visible:outline-2 focus-visible:outline-ink"
         >
           <option value="">Not linked</option>
           {sortedApps.map((a) => (
@@ -131,7 +133,7 @@ export function CvToolbar({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
               {a.company} — {a.role}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Download */}

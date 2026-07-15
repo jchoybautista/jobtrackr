@@ -1,19 +1,37 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Download, Moon, Plus, Trash2 } from "lucide-react";
+import { Download, Moon, Trash2 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { toCsv } from "@/lib/exportio";
 import { PALETTE } from "@/lib/palette";
+import { isDirty, changedFields } from "@/lib/draft";
 import type { PaletteKey } from "@/lib/types";
 import { ColorPicker } from "@/components/board/ColorPicker";
+import { AddRow } from "@/components/ui/AddRow";
 import { Button } from "@/components/ui/Button";
+import { SaveFooter } from "@/components/ui/SaveFooter";
+import { SortableList } from "@/components/ui/SortableList";
 import { toast } from "@/components/ui/Toast";
 
 const input = "rounded-xl border border-line px-3 py-2 text-sm";
 const card = "rounded-2xl border border-line-2 bg-surface p-5";
+/** Footers span the full card width and sit flush with its rounded bottom. */
+const cardFooter = "-mx-5 -mb-5 mt-4 rounded-b-2xl";
 const h2 = "mb-1 text-sm font-bold";
 const sub = "mb-4 text-xs text-ink-3";
+
+/** List rows reserve space for a grip, a colour dot and a delete button, so an
+ *  add-field placed in a bare row would not share their left and right edges.
+ *  These clone the real controls and hide them, keeping every text field in a
+ *  card on one column without hard-coding the gutter widths. */
+const GripSpacer = () => <span className="invisible shrink-0 p-1.5" aria-hidden><span className="block h-4 w-4" /></span>;
+const DotSpacer = () => <span className="invisible h-5 w-5 shrink-0" aria-hidden />;
+const DeleteSpacer = () => (
+  <Button variant="ghost" size="sm" className="invisible" tabIndex={-1} aria-hidden>
+    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+  </Button>
+);
 
 function download(filename: string, content: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -32,6 +50,56 @@ export function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const dotRef = useRef<HTMLButtonElement>(null);
   const sorted = [...s.stages].sort((a, b) => a.order - b.order);
+
+  // Each buffered card holds an overlay of pending edits on top of the stored
+  // values, rather than a copy of them. Nothing needs re-seeding when the store
+  // changes: clearing the overlay is what "clean" means, so Cancel and a
+  // completed Save are the same gesture, and no state is synced in an effect.
+  const [stageEdits, setStageEdits] = useState<Record<string, string>>({});
+  const [tagEdits, setTagEdits] = useState<Record<string, string>>({});
+  const [prefEdits, setPrefEdits] = useState<Partial<{ nudgeDays: number; currency: string }>>({});
+  const [confirmStage, setConfirmStage] = useState<string | null>(null);
+  const [confirmTag, setConfirmTag] = useState<string | null>(null);
+
+  // Stage NAMES buffer behind Save. Reorder, colour, add and delete stay
+  // immediate — see the editing contract spec.
+  const stageNames = Object.fromEntries(sorted.map((st) => [st.id, st.name]));
+  const stageDraft = { ...stageNames, ...stageEdits };
+  const stagesDirty = isDirty(stageDraft, stageNames);
+
+  const saveStages = () => {
+    for (const st of sorted) {
+      const next = (stageDraft[st.id] ?? "").trim();
+      if (next && next !== st.name) void s.renameStage(st.id, next);
+    }
+    setStageEdits({});
+    toast("Saved", "success");
+  };
+
+  // Tag names buffer the same way. Tags do not reorder, so no SortableList.
+  const tagNames = Object.fromEntries(s.tags.map((t) => [t.id, t.name]));
+  const tagDraft = { ...tagNames, ...tagEdits };
+  const tagsDirty = isDirty(tagDraft, tagNames);
+
+  const saveTags = () => {
+    for (const t of s.tags) {
+      const next = (tagDraft[t.id] ?? "").trim();
+      if (next && next !== t.name) void s.renameTag(t.id, next);
+    }
+    setTagEdits({});
+    toast("Saved", "success");
+  };
+
+  // Preferences used to commit on every keystroke.
+  const prefs = { nudgeDays: s.settings.nudgeDays, currency: s.settings.currency };
+  const prefDraft = { ...prefs, ...prefEdits };
+  const prefsDirty = isDirty(prefDraft, prefs);
+
+  const savePrefs = () => {
+    void s.updateSettings(changedFields(prefDraft, prefs));
+    setPrefEdits({});
+    toast("Saved", "success");
+  };
 
   async function onImportFile(file: File) {
     try {
@@ -54,51 +122,78 @@ export function SettingsPage() {
       <section aria-label="Pipeline" className={card}>
         <h2 className={h2}>Pipeline</h2>
         <p className={sub}>Rename, reorder, recolor, or add columns. Colors come from the JobTrackr pastel set.</p>
-        <ul className="mb-3 flex flex-col gap-2">
-          {sorted.map((st, i) => (
-            <li key={st.id} className="relative flex items-center gap-2.5">
-              <button
-                ref={pickerFor === st.id ? dotRef : undefined}
-                type="button" aria-label={`Change ${st.name} color`} aria-expanded={pickerFor === st.id}
-                onClick={() => setPickerFor(pickerFor === st.id ? null : st.id)}
-                className="h-5 w-5 shrink-0 rounded-full transition-transform hover:scale-110"
-                style={{ background: PALETTE[st.color].hex }}
-              />
-              {pickerFor === st.id && (
-                <ColorPicker
-                  value={st.color}
-                  onChange={(c: PaletteKey) => void s.recolorStage(st.id, c)}
-                  onClose={() => setPickerFor(null)}
-                  excludeRef={dotRef}
+        <SortableList
+          items={sorted}
+          getId={(st) => st.id}
+          getLabel={(st) => st.name}
+          onReorder={(_next, moved) => void s.moveStage(moved.id, moved.toIndex)}
+          className="mb-3 flex flex-col gap-2"
+          itemClassName="relative flex items-center gap-2.5"
+        >
+            {(st, handle) => (
+              <>
+                {handle}
+                <button
+                  ref={pickerFor === st.id ? dotRef : undefined}
+                  type="button" aria-label={`Change ${st.name} color`} aria-expanded={pickerFor === st.id}
+                  onClick={() => setPickerFor(pickerFor === st.id ? null : st.id)}
+                  className="h-5 w-5 shrink-0 rounded-full transition-transform hover:scale-110"
+                  style={{ background: PALETTE[st.color].hex }}
                 />
-              )}
-              <label htmlFor={`stage-${st.id}`} className="sr-only">{st.name} column name</label>
-              <input id={`stage-${st.id}`} defaultValue={st.name}
-                onBlur={(e) => e.target.value.trim() && e.target.value !== st.name && void s.renameStage(st.id, e.target.value.trim())}
-                className={`${input} flex-1`} />
-              <Button variant="ghost" size="sm" aria-label={`Move ${st.name} up`} disabled={i === 0}
-                onClick={() => void s.moveStage(st.id, i - 1)}><ArrowUp className="h-3.5 w-3.5" aria-hidden /></Button>
-              <Button variant="ghost" size="sm" aria-label={`Move ${st.name} down`} disabled={i === sorted.length - 1}
-                onClick={() => void s.moveStage(st.id, i + 1)}><ArrowDown className="h-3.5 w-3.5" aria-hidden /></Button>
-              <Button variant="ghost" size="sm" aria-label={`Delete ${st.name} column`}
-                onClick={async () => {
-                  const ok = await s.removeStage(st.id);
-                  if (!ok) toast("Move or delete this column’s cards first.", "error");
-                }}><Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden /></Button>
-            </li>
-          ))}
-        </ul>
-        <form className="flex gap-2" onSubmit={(e) => {
-          e.preventDefault();
+                {pickerFor === st.id && (
+                  <ColorPicker
+                    value={st.color}
+                    onChange={(c: PaletteKey) => void s.recolorStage(st.id, c)}
+                    onClose={() => setPickerFor(null)}
+                    excludeRef={dotRef}
+                  />
+                )}
+                <label htmlFor={`stage-${st.id}`} className="sr-only">{st.name} column name</label>
+                <input id={`stage-${st.id}`} value={stageDraft[st.id] ?? ""}
+                  onChange={(e) => setStageEdits({ ...stageEdits, [st.id]: e.target.value })}
+                  className={`${input} flex-1`} />
+                <Button variant="ghost" size="sm" aria-label={`Delete ${st.name} column`}
+                  onClick={() => setConfirmStage(st.id)}>
+                  <Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden />
+                </Button>
+              </>
+            )}
+        </SortableList>
+
+        {confirmStage && (
+          <div role="alertdialog" aria-modal="true" aria-label="Delete column"
+            className="mb-3 rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
+            <p className="mb-3 text-xs font-medium">
+              Delete the “{sorted.find((st) => st.id === confirmStage)?.name}” column? Its cards must be moved out first.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" size="sm" autoFocus onClick={() => setConfirmStage(null)}>Keep it</Button>
+              <Button variant="danger" size="sm" onClick={async () => {
+                const ok = await s.removeStage(confirmStage);
+                if (!ok) toast("Move or delete this column’s cards first.", "error");
+                setConfirmStage(null);
+              }}>Delete column</Button>
+            </div>
+          </div>
+        )}
+
+        <AddRow label="Add column" onSubmit={() => {
           if (!newStage.trim()) return;
           void s.addStage(newStage.trim());
           setNewStage("");
         }}>
-          <label htmlFor="new-stage" className="sr-only">New column name</label>
-          <input id="new-stage" value={newStage} onChange={(e) => setNewStage(e.target.value)}
-            placeholder="New column (e.g. Ghosted, Withdrawn)" className={`${input} flex-1`} />
-          <Button type="submit" variant="secondary" size="sm"><Plus className="h-3.5 w-3.5" aria-hidden /> Add</Button>
-        </form>
+          <div className="flex items-center gap-2.5 sm:col-span-2">
+            <GripSpacer />
+            <DotSpacer />
+            <label htmlFor="new-stage" className="sr-only">New column name</label>
+            <input id="new-stage" value={newStage} onChange={(e) => setNewStage(e.target.value)}
+              placeholder="New column (e.g. Ghosted, Withdrawn)" className={`${input} flex-1`} />
+            <DeleteSpacer />
+          </div>
+        </AddRow>
+
+        <SaveFooter dirty={stagesDirty} onSave={saveStages}
+          onCancel={() => setStageEdits({})} className={cardFooter} />
       </section>
 
       <section aria-label="Tags" className={card}>
@@ -108,27 +203,46 @@ export function SettingsPage() {
           {s.tags.map((t) => (
             <li key={t.id} className="flex items-center gap-2.5">
               <label htmlFor={`tag-${t.id}`} className="sr-only">{t.name} tag name</label>
-              <input id={`tag-${t.id}`} defaultValue={t.name}
-                onBlur={(e) => e.target.value.trim() && e.target.value !== t.name && void s.renameTag(t.id, e.target.value.trim())}
+              <input id={`tag-${t.id}`} value={tagDraft[t.id] ?? ""}
+                onChange={(e) => setTagEdits({ ...tagEdits, [t.id]: e.target.value })}
                 className={`${input} flex-1`} />
               <Button variant="ghost" size="sm" aria-label={`Delete tag ${t.name}`}
-                onClick={() => void s.removeTag(t.id)}>
+                onClick={() => setConfirmTag(t.id)}>
                 <Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden />
               </Button>
             </li>
           ))}
         </ul>
-        <form className="flex gap-2" onSubmit={(e) => {
-          e.preventDefault();
+
+        {confirmTag && (
+          <div role="alertdialog" aria-modal="true" aria-label="Delete tag"
+            className="mb-3 rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
+            <p className="mb-3 text-xs font-medium">
+              Delete the “{s.tags.find((t) => t.id === confirmTag)?.name}” tag? It is removed from every application.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" size="sm" autoFocus onClick={() => setConfirmTag(null)}>Keep it</Button>
+              <Button variant="danger" size="sm"
+                onClick={() => { void s.removeTag(confirmTag); setConfirmTag(null); }}>Delete tag</Button>
+            </div>
+          </div>
+        )}
+
+        <AddRow label="Add tag" onSubmit={() => {
           if (!newTag.trim()) return;
           void s.addTag(newTag.trim());
           setNewTag("");
         }}>
-          <label htmlFor="new-tag" className="sr-only">New tag name</label>
-          <input id="new-tag" value={newTag} onChange={(e) => setNewTag(e.target.value)}
-            placeholder="New tag (e.g. Visa sponsor)" className={`${input} flex-1`} />
-          <Button type="submit" variant="secondary" size="sm"><Plus className="h-3.5 w-3.5" aria-hidden /> Add</Button>
-        </form>
+          <div className="flex items-center gap-2.5 sm:col-span-2">
+            <label htmlFor="new-tag" className="sr-only">New tag name</label>
+            <input id="new-tag" value={newTag} onChange={(e) => setNewTag(e.target.value)}
+              placeholder="New tag (e.g. Visa sponsor)" className={`${input} flex-1`} />
+            <DeleteSpacer />
+          </div>
+        </AddRow>
+
+        <SaveFooter dirty={tagsDirty} onSave={saveTags}
+          onCancel={() => setTagEdits({})} className={cardFooter} />
       </section>
 
       <section aria-label="Preferences" className={card}>
@@ -139,17 +253,20 @@ export function SettingsPage() {
             <label htmlFor="nudge-days" className="mb-1 block text-xs font-semibold text-ink-2">
               Follow-up nudge after (days)
             </label>
-            <input id="nudge-days" type="number" min={1} max={60} value={s.settings.nudgeDays}
-              onChange={(e) => void s.updateSettings({ nudgeDays: Math.max(1, Number(e.target.value) || 7) })}
+            <input id="nudge-days" type="number" min={1} max={60} value={prefDraft.nudgeDays}
+              onChange={(e) => setPrefEdits({ ...prefEdits, nudgeDays: Math.max(1, Number(e.target.value) || 7) })}
               className={`${input} w-28`} />
           </div>
           <div>
             <label htmlFor="currency" className="mb-1 block text-xs font-semibold text-ink-2">Default currency</label>
-            <input id="currency" value={s.settings.currency}
-              onChange={(e) => void s.updateSettings({ currency: e.target.value.toUpperCase() })}
+            <input id="currency" value={prefDraft.currency}
+              onChange={(e) => setPrefEdits({ ...prefEdits, currency: e.target.value.toUpperCase() })}
               className={`${input} w-28`} />
           </div>
         </div>
+
+        <SaveFooter dirty={prefsDirty} onSave={savePrefs}
+          onCancel={() => setPrefEdits({})} className={cardFooter} />
       </section>
 
       <section aria-label="Appearance" className={card}>
