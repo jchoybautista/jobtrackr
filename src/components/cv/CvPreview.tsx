@@ -3,6 +3,7 @@
 import { Component, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { Loader2, RotateCw } from "lucide-react";
 import { renderCvBlob } from "@/cv/pdf";
+import { generateCvThumb } from "@/cv/thumbnail";
 import { Button } from "@/components/ui/Button";
 import type { CvDoc } from "@/cv/types";
 
@@ -73,6 +74,7 @@ function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
           if (liveUrl.current) staleUrls.current.push(liveUrl.current);
           liveUrl.current = next;
           startTransition(() => setUrl(next));
+          void generateCvThumb(cv.id, blob); // best-effort cache; never awaited, never throws
         })
         .catch((e) => {
           if (!cancelled) setError(e instanceof Error ? e : new Error(String(e)));
