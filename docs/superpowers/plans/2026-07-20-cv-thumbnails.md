@@ -40,8 +40,7 @@ Create `src/lib/__tests__/cvthumb.test.ts`:
 ```ts
 import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach } from "vitest";
-import { clearAll } from "@/lib/repo";
-import { putCvThumb, getCvThumb, deleteCvThumb } from "@/lib/repo";
+import { clearAll, putCvThumb, getCvThumb, deleteCvThumb } from "@/lib/repo";
 
 beforeEach(async () => {
   await clearAll();
@@ -170,8 +169,7 @@ Append to `src/lib/__tests__/cvthumb.test.ts` (add `useApp` + `getCvThumb`/`putC
 ```ts
 import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach } from "vitest";
-import { clearAll } from "@/lib/repo";
-import { putCvThumb, getCvThumb, deleteCvThumb } from "@/lib/repo";
+import { clearAll, putCvThumb, getCvThumb, deleteCvThumb } from "@/lib/repo";
 import { useApp } from "@/lib/store";
 
 beforeEach(async () => {
