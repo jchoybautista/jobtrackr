@@ -320,6 +320,10 @@ export const useApp = create<AppState>()((set, get) => ({
     };
     set((s) => ({ cvdocs: [cv, ...s.cvdocs] }));
     await repo.putCvDoc(cv).catch(() => {});
+    const srcThumb = await repo.getCvThumb(id).catch(() => undefined);
+    if (srcThumb) {
+      await repo.putCvThumb({ ...srcThumb, id: cv.id }).catch(() => {});
+    }
     return cv;
   },
 
@@ -351,6 +355,7 @@ export const useApp = create<AppState>()((set, get) => ({
   async removeCv(id) {
     set((s) => ({ cvdocs: s.cvdocs.filter((c) => c.id !== id) }));
     await repo.deleteCvDoc(id).catch(() => {});
+    await repo.deleteCvThumb(id).catch(() => {});
   },
 
   async clearDemo() {

@@ -9,9 +9,12 @@
 import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach } from "vitest";
 import { clearAll, putCvThumb, getCvThumb, deleteCvThumb } from "@/lib/repo";
+import { useApp } from "@/lib/store";
 
 beforeEach(async () => {
   await clearAll();
+  useApp.setState({ ready: false, profile: null, cvdocs: [] });
+  await useApp.getState().hydrate();
 });
 
 describe("cvthumbs repo", () => {
@@ -37,5 +40,29 @@ describe("cvthumbs repo", () => {
 
   it("getCvThumb returns undefined for a missing id", async () => {
     expect(await getCvThumb("nope")).toBeUndefined();
+  });
+});
+
+describe("cvthumbs store lifecycle", () => {
+  it("duplicateCv copies the source thumbnail to the new id", async () => {
+    const cv = await useApp.getState().createCv("Src", "classic");
+    await putCvThumb({ id: cv.id, blob: new Blob(["img"], { type: "image/webp" }), updatedAt: "2026-07-20T00:00:00.000Z" });
+    const copy = await useApp.getState().duplicateCv(cv.id);
+    expect(copy).toBeTruthy();
+    const copiedThumb = await getCvThumb(copy!.id);
+    expect(copiedThumb?.blob.type).toBe("image/webp");
+  });
+
+  it("duplicateCv with no source thumbnail leaves the copy without one", async () => {
+    const cv = await useApp.getState().createCv("Src2", "classic");
+    const copy = await useApp.getState().duplicateCv(cv.id);
+    expect(await getCvThumb(copy!.id)).toBeUndefined();
+  });
+
+  it("removeCv deletes the thumbnail", async () => {
+    const cv = await useApp.getState().createCv("Doomed", "classic");
+    await putCvThumb({ id: cv.id, blob: new Blob(["img"], { type: "image/webp" }), updatedAt: "2026-07-20T00:00:00.000Z" });
+    await useApp.getState().removeCv(cv.id);
+    expect(await getCvThumb(cv.id)).toBeUndefined();
   });
 });
