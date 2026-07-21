@@ -4,8 +4,7 @@ A beautiful, local-first job-hunt tracker: a pastel kanban pipeline, follow-up
 nudges, interview tracking, insights, and a built-in CV builder. Your data stays
 in your browser — no account, no backend.
 
-<!-- Replace the URL below with your Vercel deployment once main is deployed. -->
-**[Live demo →](https://YOUR-PROJECT.vercel.app)**
+**[Live demo →](https://jobtrackr-seven-liard.vercel.app)**
 
 ![JobTrackr board](docs/screenshots/board.png)
 
