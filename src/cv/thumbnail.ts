@@ -13,9 +13,14 @@ export async function generateCvThumb(id: string, pdfBlob: Blob): Promise<void> 
   try {
     const pdfjs = await import("pdfjs-dist");
     // Bundle the worker from the same package (no CDN, works offline / under CSP).
-    pdfjs.GlobalWorkerOptions.workerSrc = (
-      await import("pdfjs-dist/build/pdf.worker.min.mjs?url")
-    ).default;
+    // Resolve the worker from the same package (no CDN, works offline / under CSP).
+    // Must be `new URL(..., import.meta.url)`: Turbopack does not honour a `?url`
+    // import suffix here — it returns the worker's module namespace, whose
+    // `default` is undefined, and pdfjs then throws "Invalid `workerSrc` type".
+    pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/build/pdf.worker.min.mjs",
+      import.meta.url,
+    ).toString();
 
     const data = await pdfBlob.arrayBuffer();
     doc = await pdfjs.getDocument({ data }).promise;
