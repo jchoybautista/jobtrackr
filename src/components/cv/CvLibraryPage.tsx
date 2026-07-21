@@ -11,7 +11,8 @@ import { relativeDays } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { toast } from "@/components/ui/Toast";
-import { MiniMock, AtsBadge } from "./MiniMock";
+import { AtsBadge } from "./MiniMock";
+import { CvThumb } from "./CvThumb";
 import { NewCvDialog } from "./NewCvDialog";
 import type { CvDoc, Profile } from "@/cv/types";
 
@@ -55,7 +56,7 @@ function CvCard({ cv, profile }: { cv: CvDoc; profile: Profile | null }) {
   return (
     <li className="flex flex-col gap-3 rounded-2xl border border-line-2 bg-surface p-4">
       <Link href={`/cv/${cv.id}`} aria-label={`Edit ${cv.name}`}>
-        <MiniMock templateId={cv.templateId} accent={PALETTE[cv.accent].hex} className="w-full" />
+        <CvThumb cvId={cv.id} templateId={cv.templateId} accent={PALETTE[cv.accent].hex} className="w-full" />
       </Link>
 
       <div className="flex flex-col gap-1">

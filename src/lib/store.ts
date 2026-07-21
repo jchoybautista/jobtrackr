@@ -318,6 +318,13 @@ export const useApp = create<AppState>()((set, get) => ({
       ...structuredClone(src), id: newId(), name: `${src.name} (copy)`,
       createdAt: nowIso(), updatedAt: nowIso(),
     };
+    // Copy the thumbnail BEFORE the doc enters state: the new card reads its
+    // thumbnail once on mount, so publishing the doc first makes the copy mount
+    // against a missing row and sit on the wireframe fallback until a reload.
+    const srcThumb = await repo.getCvThumb(id).catch(() => undefined);
+    if (srcThumb) {
+      await repo.putCvThumb({ ...srcThumb, id: cv.id }).catch(() => {});
+    }
     set((s) => ({ cvdocs: [cv, ...s.cvdocs] }));
     await repo.putCvDoc(cv).catch(() => {});
     return cv;
@@ -351,6 +358,7 @@ export const useApp = create<AppState>()((set, get) => ({
   async removeCv(id) {
     set((s) => ({ cvdocs: s.cvdocs.filter((c) => c.id !== id) }));
     await repo.deleteCvDoc(id).catch(() => {});
+    await repo.deleteCvThumb(id).catch(() => {});
   },
 
   async clearDemo() {
