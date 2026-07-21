@@ -42,6 +42,10 @@ export function CvThumb({
     <img
       src={url}
       alt=""
+      width={600}
+      height={849}
+      decoding="async"
+      onError={() => setUrl(null)}
       className={`aspect-[1/1.414] w-full rounded-lg border border-line-2 bg-white object-cover object-top ${className}`}
     />
   );
