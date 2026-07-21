@@ -66,23 +66,3 @@ db.version(3).stores({
   cvdocs: "id, applicationId, updatedAt",
   cvthumbs: "id",
 });
-
-// Middleware to preserve Blob type through IndexedDB serialization
-(db.cvthumbs as any).hook("creating", function (primKey: string, obj: any) {
-  if (obj.blob instanceof Blob) {
-    // Store type metadata alongside blob
-    obj._blobType = obj.blob.type;
-  }
-  return obj;
-});
-
-(db.cvthumbs as any).hook("reading", function (obj: any) {
-  if (!obj) return obj;
-  // Reconstruct Blob from metadata if needed
-  const blobType = obj._blobType;
-  if (blobType && obj.blob && !(obj.blob instanceof Blob)) {
-    // Blob was serialized as empty object, reconstruct with type
-    obj.blob = new Blob([], { type: blobType });
-  }
-  return obj;
-});
