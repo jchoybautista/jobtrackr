@@ -39,7 +39,9 @@ class PreviewErrorBoundary extends Component<
   }
 }
 
-function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
+function PreviewInner({
+  cv, photoUrl, profileUpdatedAt,
+}: { cv: CvDoc; photoUrl?: string; profileUpdatedAt?: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [rendering, setRendering] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -74,7 +76,16 @@ function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
           if (liveUrl.current) staleUrls.current.push(liveUrl.current);
           liveUrl.current = next;
           startTransition(() => setUrl(next));
-          void generateCvThumb(cv.id, blob); // best-effort cache; never awaited, never throws
+          // Best-effort cache; never awaited, never throws. The stamp takes the
+          // later of the CV and the profile revisions: swapping the profile photo
+          // changes the rendered page without touching `cv.updatedAt`, so keying
+          // on the CV alone would leave a stale thumbnail. Erring toward a newer
+          // stamp only costs a redundant render; erring older ships a wrong image.
+          const stamp =
+            profileUpdatedAt && profileUpdatedAt > cv.updatedAt
+              ? profileUpdatedAt
+              : cv.updatedAt;
+          void generateCvThumb(cv.id, blob, stamp);
         })
         .catch((e) => {
           if (!cancelled) setError(e instanceof Error ? e : new Error(String(e)));
@@ -87,7 +98,7 @@ function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [cv, photoUrl]);
+  }, [cv, photoUrl, profileUpdatedAt]);
 
   // Revoke any remaining URLs on unmount — no leak.
   useEffect(() => {
@@ -148,11 +159,13 @@ function PreviewInner({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
   );
 }
 
-export function CvPreview({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
+export function CvPreview({
+  cv, photoUrl, profileUpdatedAt,
+}: { cv: CvDoc; photoUrl?: string; profileUpdatedAt?: string }) {
   const [nonce, setNonce] = useState(0);
   return (
     <PreviewErrorBoundary key={nonce} onRetry={() => setNonce((n) => n + 1)}>
-      <PreviewInner cv={cv} photoUrl={photoUrl} />
+      <PreviewInner cv={cv} photoUrl={photoUrl} profileUpdatedAt={profileUpdatedAt} />
     </PreviewErrorBoundary>
   );
 }

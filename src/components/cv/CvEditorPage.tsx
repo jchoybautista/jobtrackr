@@ -16,6 +16,7 @@ const backLink =
 export function CvEditorPage({ id }: { id: string }) {
   const cv = useApp((s) => s.cvdocs.find((c) => c.id === id));
   const photo = useApp((s) => s.profile?.photo);
+  const profileUpdatedAt = useApp((s) => s.profile?.updatedAt);
   const updateCv = useApp((s) => s.updateCv);
   const updateCvContent = useApp((s) => s.updateCvContent);
   const setCvSections = useApp((s) => s.setCvSections);
@@ -119,7 +120,7 @@ export function CvEditorPage({ id }: { id: string }) {
       <div className="flex flex-1 flex-col bg-sunken lg:h-dvh">
         <CvToolbar cv={cv} photoUrl={photoUrl} />
         <div className="min-h-[70vh] flex-1 p-4 lg:min-h-0 lg:p-6">
-          <CvPreview cv={cv} photoUrl={photoUrl} />
+          <CvPreview cv={cv} photoUrl={photoUrl} profileUpdatedAt={profileUpdatedAt} />
         </div>
       </div>
     </div>

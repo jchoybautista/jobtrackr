@@ -54,6 +54,22 @@ describe("cvthumbs store lifecycle", () => {
     expect(copiedThumb?.blob.type).toBe("image/webp");
   });
 
+  it("duplicateCv restamps the copied thumbnail to the copy's own revision", async () => {
+    // The copy's content is a clone, so the source image is already correct for
+    // it. Carrying the source's older stamp would read as stale against the
+    // copy's fresh `updatedAt` and force a pointless re-render on first open.
+    const cv = await useApp.getState().createCv("Src3", "classic");
+    await putCvThumb({
+      id: cv.id,
+      blob: new Blob(["img"], { type: "image/webp" }),
+      updatedAt: "2020-01-01T00:00:00.000Z", // deliberately ancient
+    });
+    const copy = await useApp.getState().duplicateCv(cv.id);
+    const copiedThumb = await getCvThumb(copy!.id);
+    expect(copiedThumb!.updatedAt).toBe(copy!.updatedAt);
+    expect(copiedThumb!.updatedAt >= copy!.updatedAt).toBe(true);
+  });
+
   it("duplicateCv writes the copied thumbnail before the new doc is published to store state (regression)", async () => {
     // Guards the ordering in `duplicateCv`: the thumb copy must happen BEFORE
     // `set(...)` publishes the new doc, because the new card reads its

@@ -323,7 +323,10 @@ export const useApp = create<AppState>()((set, get) => ({
     // against a missing row and sit on the wireframe fallback until a reload.
     const srcThumb = await repo.getCvThumb(id).catch(() => undefined);
     if (srcThumb) {
-      await repo.putCvThumb({ ...srcThumb, id: cv.id }).catch(() => {});
+      // Restamp to the copy's own revision. The content is a clone, so the image
+      // is already correct for it; leaving the source's older stamp would make the
+      // copy look stale and trigger a pointless re-render on first open.
+      await repo.putCvThumb({ ...srcThumb, id: cv.id, updatedAt: cv.updatedAt }).catch(() => {});
     }
     set((s) => ({ cvdocs: [cv, ...s.cvdocs] }));
     await repo.putCvDoc(cv).catch(() => {});

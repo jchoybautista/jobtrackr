@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { putCvThumb } from "@/lib/repo";
+import { getCvThumb, putCvThumb } from "@/lib/repo";
 
 const THUMB_WIDTH = 600; // 2× card display; height derives from the page aspect ratio.
 
@@ -7,10 +7,28 @@ const THUMB_WIDTH = 600; // 2× card display; height derives from the page aspec
  * Rasterize page 1 of a rendered CV PDF and cache it in `cvthumbs`.
  * Fire-and-forget: never throws — a missing/stale thumbnail is harmless
  * (the library card falls back to the MiniMock wireframe).
+ *
+ * `sourceStamp` identifies the CV revision this render came from; it is stored
+ * verbatim on the row so a later call can tell whether the cache already covers
+ * the current revision and skip the work entirely. Callers must fold in every
+ * input that changes the rendered page — notably the profile's `updatedAt`,
+ * since swapping the profile photo alters the PDF without touching the CV doc.
  */
-export async function generateCvThumb(id: string, pdfBlob: Blob): Promise<void> {
+export async function generateCvThumb(
+  id: string,
+  pdfBlob: Blob,
+  sourceStamp: string,
+): Promise<void> {
   let doc: PDFDocumentProxy | undefined;
   try {
+    // Bail before importing pdfjs (~1.4 MB) when the cache already covers this
+    // revision — otherwise merely opening an unmodified CV pays the full cost of
+    // the import, a worker spawn, and a rasterization to reproduce a byte-identical
+    // image. Rows written before `sourceStamp` existed carry a wall-clock write
+    // time, which is always >= the revision they rendered, so they read as fresh.
+    const cached = await getCvThumb(id).catch(() => undefined);
+    if (cached && cached.updatedAt >= sourceStamp) return;
+
     const pdfjs = await import("pdfjs-dist");
     // Resolve the worker from the same package (no CDN, works offline / under CSP).
     // Must be `new URL(..., import.meta.url)`: Turbopack does not honour a `?url`
@@ -49,7 +67,7 @@ export async function generateCvThumb(id: string, pdfBlob: Blob): Promise<void> 
     }
     if (!finalBlob) return;
 
-    await putCvThumb({ id, blob: finalBlob, updatedAt: new Date().toISOString() });
+    await putCvThumb({ id, blob: finalBlob, updatedAt: sourceStamp });
   } catch (err) {
     if (process.env.NODE_ENV !== "production") {
       console.warn("[cvthumb] generation failed", err);
