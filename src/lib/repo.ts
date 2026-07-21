@@ -1,4 +1,5 @@
 import { db } from "./db";
+import type { CvThumb } from "./db";
 import type {
   Stage, Application, Tag, Interview, Contact,
   ActivityEvent, NoteDoc, Reminder, SettingsDoc, Snapshot,
@@ -12,6 +13,7 @@ export const DEFAULT_SETTINGS: SettingsDoc = {
 const ALL_TABLES = [
   db.stages, db.applications, db.tags, db.interviews, db.contacts,
   db.events, db.notes, db.reminders, db.settings, db.profile, db.cvdocs,
+  db.cvthumbs,
 ];
 
 export async function loadAll(): Promise<Snapshot> {
@@ -47,6 +49,9 @@ export const putSettings = (x: SettingsDoc) => db.settings.put(x).then(() => {})
 export const putProfile = (x: Profile) => db.profile.put(x).then(() => {});
 export const putCvDoc = (x: CvDoc) => db.cvdocs.put(x).then(() => {});
 export const deleteCvDoc = (id: string) => db.cvdocs.delete(id);
+export const putCvThumb = (x: CvThumb) => db.cvthumbs.put(x).then(() => {});
+export const getCvThumb = (id: string) => db.cvthumbs.get(id);
+export const deleteCvThumb = (id: string) => db.cvthumbs.delete(id);
 
 export const deleteStage = (id: string) => db.stages.delete(id);
 export const deleteTag = (id: string) => db.tags.delete(id);
