@@ -49,7 +49,7 @@ export async function generateCvThumb(id: string, pdfBlob: Blob): Promise<void> 
     // Always release the worker/doc, even if rendering or storage failed above.
     // Guarded separately so a cleanup failure can't violate the never-throws contract.
     try {
-      doc?.cleanup();
+      await doc?.cleanup();
       await doc?.destroy();
     } catch {
       // Swallow — best-effort cleanup only.
