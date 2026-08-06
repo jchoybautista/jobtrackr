@@ -32,9 +32,14 @@ describe("reassignStageCards", () => {
     { id: "x", company: "c", role: "r", tagIds: [], stageId: "a", order: 0, createdAt: "t", updatedAt: "t" },
     { id: "y", company: "c", role: "r", tagIds: [], stageId: "b", order: 0, createdAt: "t", updatedAt: "t" },
   ];
-  it("moves cards from one stage to another", () => {
+  it("moves cards from one stage to another and appends after existing target cards", () => {
     const out = reassignStageCards(apps, "a", "b");
-    expect(out.find((a) => a.id === "x")!.stageId).toBe("b");
-    expect(out.find((a) => a.id === "y")!.stageId).toBe("b");
+    const x = out.find((a) => a.id === "x")!;
+    const y = out.find((a) => a.id === "y")!;
+    expect(x.stageId).toBe("b");
+    expect(y.stageId).toBe("b");
+    // "b" already has "y" at order 0; the moved card "x" is appended after it.
+    expect(y.order).toBe(0);
+    expect(x.order).toBe(1);
   });
 });

@@ -45,11 +45,35 @@ describe("store", () => {
     expect(useApp.getState().applications.find((a) => a.id === app.id)!.stageId).toBe(offer.id);
   });
 
-  it("removeStage refuses when the stage has cards", async () => {
+  it("removeStage refuses to delete a pinned stage", async () => {
     await useApp.getState().hydrate();
     const s = useApp.getState();
-    const stageWithCards = s.stages.find((st) =>
-      s.applications.some((a) => a.stageId === st.id))!;
-    expect(await s.removeStage(stageWithCards.id)).toBe(false);
+    const saved = s.stages.find((st) => st.id === "stage-saved")!;
+    expect(saved.pinned).toBe(true);
+    expect(await s.removeStage(saved.id)).toBe(false);
+    expect(useApp.getState().stages.some((st) => st.id === "stage-saved")).toBe(true);
+  });
+
+  it("removeStage moves a non-pinned stage's cards to the previous stage and reindexes", async () => {
+    const stages = [
+      { id: "saved", name: "Saved", color: "lavender", order: 0, kind: "pipeline", role: "saved", pinned: true },
+      { id: "mid", name: "Mid", color: "sky", order: 1, kind: "pipeline" },
+      { id: "offer", name: "Offer", color: "mint", order: 2, kind: "won", role: "offer", pinned: true },
+    ];
+    const apps = [
+      { id: "s1", company: "S", role: "r", tagIds: [], stageId: "saved", order: 0, createdAt: "t", updatedAt: "t" },
+      { id: "m1", company: "M", role: "r", tagIds: [], stageId: "mid", order: 0, createdAt: "t", updatedAt: "t" },
+      { id: "m2", company: "M2", role: "r", tagIds: [], stageId: "mid", order: 1, createdAt: "t", updatedAt: "t" },
+    ];
+    useApp.setState({ stages, applications: apps } as never);
+    const ok = await useApp.getState().removeStage("mid");
+    expect(ok).toBe(true);
+    const s = useApp.getState();
+    expect(s.stages.some((st) => st.id === "mid")).toBe(false);
+    expect(s.stages.map((st) => st.order)).toEqual(s.stages.map((_, i) => i)); // contiguous
+    // m1/m2 moved to the previous stage (saved) with contiguous orders after s1
+    const saved = s.applications.filter((a) => a.stageId === "saved").sort((a, b) => a.order - b.order);
+    expect(saved.map((a) => a.id)).toEqual(["s1", "m1", "m2"]);
+    expect(saved.map((a) => a.order)).toEqual([0, 1, 2]);
   });
 });
