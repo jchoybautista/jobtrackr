@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { GripVertical, Plus } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -77,16 +77,21 @@ export function Column({
             excludeRef={dotRef}
           />
         )}
-        <h2
-          className="text-[13px] font-bold"
-          {...(stage.pinned ? {} : sortable.attributes)}
-          {...(stage.pinned ? {} : sortable.listeners)}
-        >
-          {stage.name}
-        </h2>
+        <h2 className="text-[13px] font-bold">{stage.name}</h2>
         <span className="rounded-full bg-sunken px-2 py-0.5 text-[10px] font-semibold text-ink-3">
           {String(apps.length).padStart(2, "0")}
         </span>
+        {!stage.pinned && (
+          <button
+            type="button"
+            aria-label={`Reorder ${stage.name} column`}
+            className="ml-auto cursor-grab touch-none rounded-md p-1 text-ink-3 opacity-0 transition-opacity hover:bg-sunken focus-visible:opacity-100 group-hover/col:opacity-100 active:cursor-grabbing"
+            {...sortable.attributes}
+            {...sortable.listeners}
+          >
+            <GripVertical className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        )}
         <ColumnMenu stage={stage} />
       </header>
       <SortableContext items={apps.map((a) => a.id)} strategy={verticalListSortingStrategy}>

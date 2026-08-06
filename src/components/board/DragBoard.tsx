@@ -17,10 +17,24 @@ import {
  *  distance only for keyboard dragging (which has no pointer). A dragged card
  *  is ~230px wide, so its corners straddle two columns near a boundary and
  *  `closestCorners` alone would drop it in the wrong column — or snap it back
- *  to its source — even while the cursor is clearly inside the target. */
+ *  to its source — even while the cursor is clearly inside the target.
+ *
+ *  Columns and cards share this one DndContext but live in separate id
+ *  namespaces (`col:<stageId>` vs plain application/stage ids). Without
+ *  scoping, a dragged column's pointer lands over the innermost droppable —
+ *  a card or the card-list div — which never matches the `col:` prefix, so
+ *  onDragEnd's column branch would silently no-op everywhere but the thin
+ *  header strip. Scope candidate containers to the active item's namespace
+ *  so column drags only ever resolve against other columns, and card drags
+ *  only ever resolve against cards/stage droppables, exactly as before. */
 const collisionDetection: CollisionDetection = (args) => {
-  const byPointer = pointerWithin(args);
-  return byPointer.length > 0 ? byPointer : closestCorners(args);
+  const isColumn = String(args.active.id).startsWith("col:");
+  const containers = args.droppableContainers.filter((c) =>
+    isColumn ? String(c.id).startsWith("col:") : !String(c.id).startsWith("col:"),
+  );
+  const scoped = { ...args, droppableContainers: containers };
+  const byPointer = pointerWithin(scoped);
+  return byPointer.length > 0 ? byPointer : closestCorners(scoped);
 };
 import { useApp } from "@/lib/store";
 import { columnTints } from "@/lib/palette";

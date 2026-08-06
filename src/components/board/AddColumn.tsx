@@ -24,8 +24,11 @@ export function AddColumn() {
           <input
             id="new-column" autoFocus value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") submit(); if (e.key === "Escape") setAdding(false); }}
-            onBlur={submit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submit();
+              if (e.key === "Escape") { setAdding(false); setName(""); }
+            }}
+            onBlur={() => { setAdding(false); setName(""); }}
             placeholder="Column name"
             className="w-full rounded-xl border border-line px-3 py-2 text-sm"
           />
