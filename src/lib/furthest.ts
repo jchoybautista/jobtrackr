@@ -26,3 +26,11 @@ export function nextFurthestStageId(
     : -1;
   return toStage.order > currentOrder ? toStage.id : app.furthestStageId;
 }
+
+export function applyFurthestOnMove(
+  app: Application, toStageId: string, stages: Stage[],
+): Application {
+  const toStage = stages.find((s) => s.id === toStageId);
+  if (!toStage) return app;
+  return { ...app, furthestStageId: nextFurthestStageId(app, toStage, stages) };
+}

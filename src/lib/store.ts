@@ -14,6 +14,8 @@ import { PALETTE_KEYS } from "./palette";
 import * as repo from "./repo";
 import { fromJson, toJson } from "./exportio";
 import { seedIfEmpty, clearDemoData, DEFAULT_STAGES, PRESET_TAGS } from "./seed";
+import { needsMigration, migrateSnapshot } from "./migrate";
+import { applyFurthestOnMove } from "./furthest";
 
 const nowIso = () => new Date().toISOString();
 
@@ -84,7 +86,12 @@ export const useApp = create<AppState>()((set, get) => ({
   async hydrate() {
     try {
       await seedIfEmpty();
-      const snap = await repo.loadAll();
+      let snap = await repo.loadAll();
+      if (needsMigration(snap)) {
+        snap = migrateSnapshot(snap);
+        await repo.importSnapshot(snap, "replace");
+        snap = await repo.loadAll();
+      }
       set(() => ({ ...snap, ready: true }));
     } catch {
       set(() => ({
@@ -99,8 +106,10 @@ export const useApp = create<AppState>()((set, get) => ({
     const s = get();
     const stageId = input.stageId ?? s.stages[0]?.id ?? "stage-saved";
     const order = s.applications.filter((a) => a.stageId === stageId).length;
+    const stage = s.stages.find((st) => st.id === stageId);
+    const furthestStageId = stage?.kind === "pipeline" ? stageId : undefined;
     const app: Application = {
-      tagIds: [], ...input, id: newId(), stageId, order,
+      tagIds: [], furthestStageId, ...input, id: newId(), stageId, order,
       createdAt: nowIso(), updatedAt: nowIso(),
     };
     set((st) => ({ applications: [...st.applications, app] }));
@@ -142,7 +151,8 @@ export const useApp = create<AppState>()((set, get) => ({
     const s = get();
     const stage = s.stages.find((st) => st.id === toStageId);
     const before = s.applications.find((a) => a.id === id);
-    const moved = moveCard(s.applications, id, toStageId, toIndex, nowIso());
+    let moved = moveCard(s.applications, id, toStageId, toIndex, nowIso());
+    moved = moved.map((a) => (a.id === id ? applyFurthestOnMove(a, toStageId, s.stages) : a));
     set(() => ({ applications: moved }));
     const changed = moved.filter((a, i) => a !== s.applications[i]);
     await repo.putApplications(changed).catch(() => {});
