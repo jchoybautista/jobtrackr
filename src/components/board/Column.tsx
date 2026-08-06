@@ -48,9 +48,16 @@ export function Column({
   const [pickerOpen, setPickerOpen] = useState(false);
   const dotRef = useRef<HTMLButtonElement>(null);
   const recolorStage = useApp((s) => s.recolorStage);
+  const sortable = useSortable({ id: `col:${stage.id}`, disabled: !!stage.pinned });
 
   return (
-    <section aria-label={`${stage.name} column, ${apps.length} applications`}
+    <section
+      ref={sortable.setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(sortable.transform),
+        transition: sortable.transition,
+      }}
+      aria-label={`${stage.name} column, ${apps.length} applications`}
       className="group/col flex w-[248px] shrink-0 snap-start flex-col">
       <header className="relative mb-2.5 flex items-center gap-2 px-0.5">
         <button
@@ -70,7 +77,13 @@ export function Column({
             excludeRef={dotRef}
           />
         )}
-        <h2 className="text-[13px] font-bold">{stage.name}</h2>
+        <h2
+          className="text-[13px] font-bold"
+          {...(stage.pinned ? {} : sortable.attributes)}
+          {...(stage.pinned ? {} : sortable.listeners)}
+        >
+          {stage.name}
+        </h2>
         <span className="rounded-full bg-sunken px-2 py-0.5 text-[10px] font-semibold text-ink-3">
           {String(apps.length).padStart(2, "0")}
         </span>

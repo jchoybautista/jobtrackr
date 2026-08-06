@@ -7,6 +7,7 @@ import { computeNudges, dueReminders, filterApplications, upcomingInterviews } f
 import type { Interview } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Column } from "./Column";
+import { AddColumn } from "./AddColumn";
 import { DragBoard } from "./DragBoard";
 import { AddJobDialog } from "./AddJobDialog";
 import { CommandK } from "./CommandK";
@@ -121,6 +122,7 @@ export function BoardPage() {
               onQuickAdd={(stageId) => { setQuickAddStage(stageId); setAddOpen(true); }}
             />
           ))}
+          <AddColumn />
         </div>
       </DragBoard>
 

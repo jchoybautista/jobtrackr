@@ -7,7 +7,11 @@ import {
   useSensor, useSensors,
   type CollisionDetection, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import {
+  sortableKeyboardCoordinates,
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 /** Resolve drops by where the pointer actually is, falling back to corner
  *  distance only for keyboard dragging (which has no pointer). A dragged card
@@ -46,6 +50,17 @@ export function DragBoard({ children }: { children: React.ReactNode }) {
     setActiveId(null);
     const { active, over } = e;
     if (!over) return;
+
+    if (String(active.id).startsWith("col:")) {
+      const fromId = String(active.id).slice(4);
+      const overId = String(over.id).startsWith("col:") ? String(over.id).slice(4) : null;
+      if (!overId || overId === fromId) return;
+      const sorted = [...s.stages].sort((a, b) => a.order - b.order);
+      const toIndex = sorted.findIndex((st) => st.id === overId);
+      await s.moveStage(fromId, toIndex);
+      return;
+    }
+
     const overId = String(over.id);
     const activeApp = s.applications.find((a) => a.id === active.id);
     if (!activeApp) return;
@@ -86,7 +101,12 @@ export function DragBoard({ children }: { children: React.ReactNode }) {
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      {children}
+      <SortableContext
+        items={s.stages.map((st) => `col:${st.id}`)}
+        strategy={horizontalListSortingStrategy}
+      >
+        {children}
+      </SortableContext>
       <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.2, 0.9, 0.3, 1.15)" }}>
         {activeApp && activeStage && (
           <div className="rotate-3 scale-[1.04] shadow-2xl motion-reduce:rotate-0 motion-reduce:scale-100">
