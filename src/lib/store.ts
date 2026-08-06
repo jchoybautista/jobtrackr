@@ -3,13 +3,13 @@
 import { create } from "zustand";
 import type {
   Application, Contact, Filters, Interview, NoteDoc, PaletteKey,
-  Reminder, SettingsDoc, Snapshot, Tag, Profile, CvDoc,
+  Reminder, SettingsDoc, Snapshot, Stage, Tag, Profile, CvDoc,
 } from "./types";
 import { EMPTY_FILTERS } from "./types";
 import type { CvContent, CvSection, TemplateId } from "@/cv/types";
 import { emptyCvContent, DEFAULT_SECTIONS } from "@/cv/types";
 import { newId } from "./id";
-import { moveCard, reorderStages } from "./ordering";
+import { moveCard, reorderStages, reorderStagesPinned, reassignStageCards } from "./ordering";
 import { PALETTE_KEYS } from "./palette";
 import * as repo from "./repo";
 import { fromJson, toJson } from "./exportio";
@@ -165,9 +165,12 @@ export const useApp = create<AppState>()((set, get) => ({
   async addStage(name) {
     const s = get();
     const color = PALETTE_KEYS[s.stages.length % PALETTE_KEYS.length];
-    const stage = { id: newId(), name, color, order: s.stages.length, kind: "pipeline" as const };
-    set((st) => ({ stages: [...st.stages, stage] }));
-    await repo.putStage(stage).catch(() => {});
+    const stage: Stage = { id: newId(), name, color, order: s.stages.length, kind: "pipeline" };
+    const sorted = [...s.stages, stage].sort((a, b) => a.order - b.order);
+    const lastPinned = sorted[sorted.length - 2]?.pinned ? sorted.length - 1 : sorted.length;
+    const next = reorderStages(sorted, stage.id, lastPinned - 1);
+    set(() => ({ stages: next }));
+    await repo.putStages(next).catch(() => {});
   },
 
   async renameStage(id, name) {
@@ -183,14 +186,25 @@ export const useApp = create<AppState>()((set, get) => ({
   },
 
   async moveStage(id, toIndex) {
-    const next = reorderStages(get().stages, id, toIndex);
+    const next = reorderStagesPinned(get().stages, id, toIndex);
     set(() => ({ stages: next }));
     await repo.putStages(next).catch(() => {});
   },
 
   async removeStage(id) {
-    if (get().applications.some((a) => a.stageId === id)) return false;
-    set((s) => ({ stages: s.stages.filter((st) => st.id !== id) }));
+    const s = get();
+    const stage = s.stages.find((st) => st.id === id);
+    if (!stage || stage.pinned) return false;
+    const sorted = [...s.stages].sort((a, b) => a.order - b.order);
+    const idx = sorted.findIndex((st) => st.id === id);
+    const target = sorted[idx - 1] ?? sorted[idx + 1]; // previous, else next
+    let apps = s.applications;
+    if (target) apps = reassignStageCards(apps, id, target.id);
+    const stages = sorted.filter((st) => st.id !== id).map((st, i) => ({ ...st, order: i }));
+    set(() => ({ stages, applications: apps }));
+    await repo.putStages(stages).catch(() => {});
+    const moved = apps.filter((a, i) => a !== s.applications[i]);
+    if (moved.length) await repo.putApplications(moved).catch(() => {});
     await repo.deleteStage(id).catch(() => {});
     return true;
   },
