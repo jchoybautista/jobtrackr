@@ -38,27 +38,38 @@ function demoApp(
   };
 }
 
-export async function seedIfEmpty(now: Date = new Date()): Promise<boolean> {
-  const count = await db.stages.count();
-  if (count > 0) return false;
-
+export function demoSnapshot(now: Date): Snapshot {
   const applications: Application[] = [
     demoApp(now, "vercel", "Vercel", "UX Engineer", "stage-saved", 0,
-      { location: "Remote", workMode: "remote", tagIds: ["tag-remote"], jdSnapshot: "Vercel is looking for a UX Engineer to craft polished product surfaces…" }),
-    demoApp(now, "framer", "Framer", "Design Engineer", "stage-saved", 1, { location: "Amsterdam" }),
+      { location: "Remote", workMode: "remote", tagIds: ["tag-remote"], furthestStageId: "stage-saved",
+        jdSnapshot: "Vercel is looking for a UX Engineer to craft polished product surfaces…" }),
+    demoApp(now, "framer", "Framer", "Design Engineer", "stage-saved", 1,
+      { location: "Amsterdam", furthestStageId: "stage-saved" }),
     demoApp(now, "stripe", "Stripe", "Product Designer", "stage-screening", 0,
-      { location: "Remote", workMode: "remote", salaryMin: 120000, salaryMax: 140000, currency: "USD", source: "LinkedIn", tagIds: ["tag-dream"], appliedAt: daysAgo(now, 8) }),
+      { location: "Remote", workMode: "remote", salaryMin: 120000, salaryMax: 140000, currency: "USD",
+        source: "LinkedIn", tagIds: ["tag-dream"], appliedAt: daysAgo(now, 8), furthestStageId: "stage-screening" }),
+    // Ghosted: past Saved, silent > 14 days
     demoApp(now, "linear", "Linear", "Frontend Engineer", "stage-screening", 1,
-      { location: "Hybrid · SF", workMode: "hybrid", source: "Referral", tagIds: ["tag-referral"], appliedAt: daysAgo(now, 9), updatedAt: daysAgo(now, 9) }),
+      { location: "Hybrid · SF", workMode: "hybrid", source: "Referral", tagIds: ["tag-referral"],
+        appliedAt: daysAgo(now, 21), updatedAt: daysAgo(now, 20), furthestStageId: "stage-screening" }),
     demoApp(now, "canva", "Canva", "Software Engineer", "stage-interview", 0,
-      { location: "Manila", workMode: "onsite", source: "JobStreet", tagIds: ["tag-high"], appliedAt: daysAgo(now, 12) }),
+      { location: "Manila", workMode: "onsite", source: "JobStreet", tagIds: ["tag-high"],
+        appliedAt: daysAgo(now, 12), furthestStageId: "stage-interview" }),
+    demoApp(now, "figma", "Figma", "Product Engineer", "stage-technical", 0,
+      { location: "Remote", workMode: "remote", source: "LinkedIn", appliedAt: daysAgo(now, 15),
+        furthestStageId: "stage-technical" }),
+    demoApp(now, "notion", "Notion", "Full-stack Engineer", "stage-final", 0,
+      { location: "Remote", workMode: "remote", source: "Referral", appliedAt: daysAgo(now, 18),
+        furthestStageId: "stage-final" }),
     demoApp(now, "shopify", "Shopify", "Web Developer", "stage-offer", 0,
-      { location: "Remote", workMode: "remote", salaryMin: 135000, currency: "USD", tagIds: ["tag-dream"], appliedAt: daysAgo(now, 20) }),
+      { location: "Remote", workMode: "remote", salaryMin: 135000, currency: "USD", tagIds: ["tag-dream"],
+        appliedAt: daysAgo(now, 20), furthestStageId: "stage-final" }),
+    // Rejected after reaching Technical → counts against the technical rate
     demoApp(now, "grab", "Grab", "iOS Developer", "stage-rejected", 0,
-      { location: "Singapore", appliedAt: daysAgo(now, 25) }),
+      { location: "Singapore", appliedAt: daysAgo(now, 25), furthestStageId: "stage-technical" }),
   ];
 
-  const snap: Snapshot = {
+  return {
     stages: DEFAULT_STAGES,
     tags: PRESET_TAGS,
     applications,
@@ -82,7 +93,12 @@ export async function seedIfEmpty(now: Date = new Date()): Promise<boolean> {
     settings: { ...DEFAULT_SETTINGS, demo: true },
     profile: null, cvdocs: [],
   };
-  await importSnapshot(snap, "replace");
+}
+
+export async function seedIfEmpty(now: Date = new Date()): Promise<boolean> {
+  const count = await db.stages.count();
+  if (count > 0) return false;
+  await importSnapshot(demoSnapshot(now), "replace");
   return true;
 }
 
