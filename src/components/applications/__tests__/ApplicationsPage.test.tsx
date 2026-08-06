@@ -28,10 +28,7 @@ it("lists applications and filters by outcome", async () => {
   render(<ApplicationsPage />);
   expect(screen.getByText("Stripe")).toBeTruthy();
   expect(screen.getByText("Grab")).toBeTruthy();
-  // "Rejected" matches both the outcome filter and the stage-named toggle
-  // (DEFAULT_STAGES has a stage literally named "Rejected"); the outcome
-  // button renders first in DOM order.
-  await userEvent.click(screen.getAllByRole("button", { name: /rejected/i })[0]);
+  await userEvent.click(screen.getByRole("button", { name: "Outcome: Rejected" }));
   expect(screen.queryByText("Stripe")).toBeNull();
   expect(screen.getByText("Grab")).toBeTruthy();
 });

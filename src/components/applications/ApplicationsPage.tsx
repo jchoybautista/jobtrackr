@@ -52,20 +52,24 @@ export function ApplicationsPage() {
       <h1 className="text-2xl font-extrabold tracking-tight">Applications</h1>
       <p className="mb-5 text-xs text-ink-3">Every application, filterable by status and outcome.</p>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {OUTCOMES.map((o) => (
-          <Button key={o.value} size="sm"
-            variant={outcomes.includes(o.value) ? "primary" : "secondary"}
-            aria-pressed={outcomes.includes(o.value)}
-            onClick={() => toggleOutcome(o.value)}>{o.label}</Button>
-        ))}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div role="group" aria-label="Filter by outcome" className="flex flex-wrap gap-2">
+          {OUTCOMES.map((o) => (
+            <Button key={o.value} size="sm"
+              variant={outcomes.includes(o.value) ? "primary" : "secondary"}
+              aria-label={`Outcome: ${o.label}`} aria-pressed={outcomes.includes(o.value)}
+              onClick={() => toggleOutcome(o.value)}>{o.label}</Button>
+          ))}
+        </div>
         <span className="mx-1 w-px self-stretch bg-line-2" aria-hidden />
-        {s.stages.map((st) => (
-          <Button key={st.id} size="sm"
-            variant={stageIds.includes(st.id) ? "primary" : "secondary"}
-            aria-pressed={stageIds.includes(st.id)}
-            onClick={() => toggleStage(st.id)}>{st.name}</Button>
-        ))}
+        <div role="group" aria-label="Filter by stage" className="flex flex-wrap gap-2">
+          {s.stages.map((st) => (
+            <Button key={st.id} size="sm"
+              variant={stageIds.includes(st.id) ? "primary" : "secondary"}
+              aria-label={`Stage: ${st.name}`} aria-pressed={stageIds.includes(st.id)}
+              onClick={() => toggleStage(st.id)}>{st.name}</Button>
+          ))}
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-line-2 bg-surface">
@@ -74,7 +78,7 @@ export function ApplicationsPage() {
             <tr>
               {th("company", "Company")}{th("role", "Role")}{th("status", "Status")}
               {th("source", "Source")}{th("salary", "Salary")}{th("applied", "Applied")}
-              {th("silent", "Silent")}
+              {th("silent", "Silent (days)")}
             </tr>
           </thead>
           <tbody>
