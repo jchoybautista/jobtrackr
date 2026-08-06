@@ -79,11 +79,11 @@ export function DashboardPage() {
           <h2 className="mb-4 text-sm font-bold">Applications per week</h2>
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={metrics.weekly} margin={{ top: 0, right: 0, bottom: 0, left: -28 }}>
+              <BarChart data={metrics.weekly} margin={{ top: 0, right: 0, bottom: 0, left: -28 }} barCategoryGap="18%">
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#6b6b6b" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#6b6b6b" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis tick={{ fontSize: 10, fill: "#6b6b6b" }} axisLine={false} tickLine={false} allowDecimals={false} domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} />
                 <Tooltip cursor={{ fill: "#f5f5f5" }} contentStyle={{ borderRadius: 12, border: "1px solid #e5e5e5", fontSize: 12 }} />
-                <Bar dataKey="count" fill="#1a1a1a" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="count" fill="#1a1a1a" radius={[6, 6, 0, 0]} maxBarSize={56} />
               </BarChart>
             </ResponsiveContainer>
           </div>

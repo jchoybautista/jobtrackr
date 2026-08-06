@@ -8,7 +8,7 @@ import { AlarmClock, CalendarClock, FileText, StickyNote } from "lucide-react";
 export interface JobCardProps {
   app: Application;
   tags: Tag[];
-  tints: { cardBg: string; cardBorder: string; textStrong: string; textMuted: string };
+  tints: { cardBg: string; cardBorder: string; textStrong: string; textMuted: string; pillBg: string; pillBorder: string };
   nudgeDays?: number;
   interview?: Interview;
   noteCount?: number;
@@ -39,13 +39,19 @@ export function JobCard({
       <span className="mt-0.5 block text-xs" style={{ color: tints.textMuted }}>{meta}</span>
 
       {nudgeDays != null && (
-        <span className="mt-2 flex items-center gap-1.5 rounded-lg border border-warn-line bg-warn-bg px-2 py-1 text-[11px] font-medium text-warn">
+        <span
+          className="mt-2 flex items-center gap-1.5 rounded-lg border border-dashed px-2 py-1 text-[11px] font-medium"
+          style={{ background: tints.pillBg, borderColor: tints.pillBorder, color: tints.textStrong }}
+        >
           <AlarmClock className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {nudgeDays} days silent — follow up?
         </span>
       )}
       {interview && (
-        <span className="mt-2 flex items-center gap-1.5 rounded-lg bg-surface/70 px-2 py-1 text-[11px] font-medium text-ink-2">
+        <span
+          className="mt-2 flex items-center gap-1.5 rounded-lg border border-dashed px-2 py-1 text-[11px] font-medium"
+          style={{ background: tints.pillBg, borderColor: tints.pillBorder, color: tints.textStrong }}
+        >
           <CalendarClock className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {interview.roundType} round · {shortDate(interview.scheduledAt)}
         </span>
