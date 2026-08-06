@@ -13,7 +13,7 @@ describe("store", () => {
     await useApp.getState().hydrate();
     const s = useApp.getState();
     expect(s.ready).toBe(true);
-    expect(s.stages.length).toBe(5);
+    expect(s.stages.length).toBe(7);
     expect(s.applications.length).toBeGreaterThan(0);
   });
 

@@ -5,11 +5,13 @@ import {
 import type { Application, Stage, Tag, Snapshot } from "./types";
 
 export const DEFAULT_STAGES: Stage[] = [
-  { id: "stage-saved", name: "Saved", color: "lavender", order: 0, kind: "pipeline" },
-  { id: "stage-applied", name: "Applied", color: "pink", order: 1, kind: "pipeline" },
-  { id: "stage-interview", name: "Interview", color: "yellow", order: 2, kind: "pipeline" },
-  { id: "stage-offer", name: "Offer", color: "mint", order: 3, kind: "won" },
-  { id: "stage-rejected", name: "Rejected", color: "gray", order: 4, kind: "lost" },
+  { id: "stage-saved", name: "Saved", color: "lavender", order: 0, kind: "pipeline", role: "saved", pinned: true },
+  { id: "stage-screening", name: "Screening", color: "sky", order: 1, kind: "pipeline", role: "screening" },
+  { id: "stage-interview", name: "Interview", color: "yellow", order: 2, kind: "pipeline", role: "interview" },
+  { id: "stage-technical", name: "Technical", color: "peach", order: 3, kind: "pipeline", role: "technical" },
+  { id: "stage-final", name: "Final interview", color: "orchid", order: 4, kind: "pipeline", role: "final" },
+  { id: "stage-rejected", name: "Rejected", color: "gray", order: 5, kind: "lost", role: "rejected" },
+  { id: "stage-offer", name: "Offer", color: "mint", order: 6, kind: "won", role: "offer", pinned: true },
 ];
 
 export const PRESET_TAGS: Tag[] = [

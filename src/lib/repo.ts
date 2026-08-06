@@ -7,7 +7,7 @@ import type {
 } from "./types";
 
 export const DEFAULT_SETTINGS: SettingsDoc = {
-  id: "singleton", nudgeDays: 7, currency: "USD", theme: "light", demo: false,
+  id: "singleton", nudgeDays: 7, ghostDays: 14, currency: "USD", theme: "light", demo: false,
 };
 
 const ALL_TABLES = [

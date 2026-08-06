@@ -7,12 +7,17 @@ export type PaletteKey =
 
 export type StageKind = "pipeline" | "won" | "lost";
 
+export type StageRole =
+  | "saved" | "screening" | "interview" | "technical" | "final" | "rejected" | "offer";
+
 export interface Stage {
   id: string;
   name: string;
   color: PaletteKey;
   order: number;
   kind: StageKind;
+  role?: StageRole;   // default stages only; anchors analytics
+  pinned?: boolean;   // saved/offer: not draggable, not deletable
 }
 
 export type WorkMode = "remote" | "hybrid" | "onsite";
@@ -36,6 +41,7 @@ export interface Application {
   createdAt: string;
   updatedAt: string;
   archived?: boolean;
+  furthestStageId?: string; // deepest pipeline stage ever reached
 }
 
 export interface Tag { id: string; name: string; preset: boolean; }
@@ -93,6 +99,7 @@ export interface Reminder {
 export interface SettingsDoc {
   id: "singleton";
   nudgeDays: number;
+  ghostDays: number;
   currency: string;
   theme: "light";
   demo: boolean;

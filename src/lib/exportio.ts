@@ -85,7 +85,7 @@ const baseSnapshotShape = {
     dueAt: z.string(), done: z.boolean(), snoozedUntil: z.string().optional(),
   })),
   settings: z.object({
-    id: z.literal("singleton"), nudgeDays: z.number(), currency: z.string(),
+    id: z.literal("singleton"), nudgeDays: z.number(), ghostDays: z.number(), currency: z.string(),
     theme: z.literal("light"), demo: z.boolean(),
   }),
 };
