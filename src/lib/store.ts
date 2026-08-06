@@ -406,7 +406,12 @@ export const useApp = create<AppState>()((set, get) => ({
   async importData(json, mode) {
     const snap = fromJson(json); // throws on invalid — caller shows toast
     await repo.importSnapshot(snap, mode);
-    const loaded = await repo.loadAll();
+    let loaded = await repo.loadAll();
+    if (needsMigration(loaded)) {
+      loaded = migrateSnapshot(loaded);
+      await repo.importSnapshot(loaded, "replace");
+      loaded = await repo.loadAll();
+    }
     set(() => ({ ...loaded }));
   },
 

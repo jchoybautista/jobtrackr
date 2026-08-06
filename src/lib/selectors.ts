@@ -98,7 +98,8 @@ export function computeMetrics(snap: Snapshot, nowIso: string): Metrics {
   const rate = (role: StageRole): number | null => {
     const denom = apps.filter((a) => reached(a, role)).length;
     if (denom === 0) return null;
-    return apps.filter((a) => passed(a, role)).length / denom;
+    const num = apps.filter((a) => reached(a, role) && passed(a, role)).length;
+    return num / denom;
   };
 
   const responded = appliedApps.filter((a) => {

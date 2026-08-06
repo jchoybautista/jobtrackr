@@ -18,7 +18,7 @@ describe("reorderStagesPinned", () => {
     const out = reorderStagesPinned(stages, "a", 4); // try to drop after Offer
     expect(out[out.length - 1].id).toBe("offer"); // Offer still last
     expect(out.map((s) => s.order)).toEqual([0, 1, 2, 3, 4]);
-    expect(out.find((s) => s.id === "a")!.order).toBe(3); // just before rejected
+    expect(out.find((s) => s.id === "a")!.order).toBe(3); // after Rejected, just before Offer
   });
   it("clamps a move before the pinned-first stage", () => {
     const out = reorderStagesPinned(stages, "b", 0);

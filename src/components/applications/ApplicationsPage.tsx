@@ -39,7 +39,8 @@ export function ApplicationsPage() {
   };
 
   const th = (key: SortKey, label: string) => (
-    <th className="px-3 py-2 text-left font-semibold">
+    <th className="px-3 py-2 text-left font-semibold"
+      aria-sort={sortKey === key ? (dir === "asc" ? "ascending" : "descending") : "none"}>
       <button type="button" onClick={() => sortBy(key)} className="hover:underline"
         aria-label={`Sort by ${label}`}>
         {label}{sortKey === key ? (dir === "asc" ? " ↑" : " ↓") : ""}

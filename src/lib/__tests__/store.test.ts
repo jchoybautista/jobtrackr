@@ -2,6 +2,8 @@ import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach } from "vitest";
 import { clearAll } from "@/lib/repo";
 import { useApp } from "@/lib/store";
+import { toJson } from "@/lib/exportio";
+import type { Snapshot } from "@/lib/types";
 
 beforeEach(async () => {
   await clearAll();
@@ -75,5 +77,40 @@ describe("store", () => {
     const saved = s.applications.filter((a) => a.stageId === "saved").sort((a, b) => a.order - b.order);
     expect(saved.map((a) => a.id)).toEqual(["s1", "m1", "m2"]);
     expect(saved.map((a) => a.order)).toEqual([0, 1, 2]);
+  });
+
+  it("importData migrates a legacy (pre-role, pre-ghostDays) snapshot into the live store", async () => {
+    // 5 roleless stages, as a pre-migration export would have.
+    const legacyStages = [
+      { id: "stage-saved", name: "Saved", color: "lavender", order: 0, kind: "pipeline" },
+      { id: "stage-applied", name: "Applied", color: "sky", order: 1, kind: "pipeline" },
+      { id: "stage-interview", name: "Interview", color: "yellow", order: 2, kind: "pipeline" },
+      { id: "stage-offer", name: "Offer", color: "mint", order: 3, kind: "won" },
+      { id: "stage-rejected", name: "Rejected", color: "gray", order: 4, kind: "lost" },
+    ];
+    const legacyApp = {
+      id: "legacy-1", company: "Acme", role: "Dev", tagIds: [],
+      stageId: "stage-interview", order: 0,
+      createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    const legacySnapshot = {
+      stages: legacyStages,
+      applications: [legacyApp],
+      tags: [], interviews: [], contacts: [], events: [], notes: [], reminders: [],
+      // No ghostDays — pre-ghosting export.
+      settings: { id: "singleton", nudgeDays: 7, currency: "USD", theme: "light", demo: false },
+      profile: null, cvdocs: [],
+    } as unknown as Snapshot;
+
+    const json = await toJson(legacySnapshot);
+    await useApp.getState().importData(json, "replace");
+
+    const s = useApp.getState();
+    // Migration ran: roles got stamped onto the canonical stages.
+    expect(s.stages.some((st) => st.role === "screening")).toBe(true);
+    // The offer stage is pinned again.
+    expect(s.stages.find((st) => st.id === "stage-offer")?.pinned).toBe(true);
+    // Settings backfilled with the default ghostDays.
+    expect(s.settings.ghostDays).toBe(14);
   });
 });

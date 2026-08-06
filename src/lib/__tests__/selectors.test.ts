@@ -94,6 +94,27 @@ describe("computeMetrics", () => {
     expect(m.funnel.find((f) => f.label === "Offer")).toEqual({ label: "Offer", count: 1, pct: 20 });
   });
 
+  it("constrains the pass-rate numerator to the denominator (offer apps that skipped a stage don't inflate the rate)", () => {
+    const snap: Snapshot = {
+      stages,
+      applications: [
+        // reached technical and is still sitting there — has NOT passed it
+        withFurthest("stuck", "technical"),
+        // dragged straight to Offer; furthest never advanced past Saved, so it
+        // never reached technical at all
+        withFurthest("skipped", "offer", "saved"),
+      ],
+      tags: [], contacts: [], events: [], notes: [], reminders: [], interviews: [],
+      settings: { ...DEFAULT_SETTINGS, ghostDays: 14 }, profile: null, cvdocs: [],
+    };
+    const m = computeMetrics(snap, NOW);
+    // denom = 1 ("stuck" is the only app that reached technical). The old
+    // numerator counted "skipped" too (any won-stage app "passes"), giving
+    // 1/1 = 100% despite nobody actually passing technical. The fix
+    // constrains the numerator to apps that also reached the stage: 0/1.
+    expect(m.technicalPassRate).toBe(0);
+  });
+
   it("returns null pass rate when nobody reached the stage", () => {
     const snap: Snapshot = {
       stages, applications: [app("s", "saved", { furthestStageId: "saved" })],
