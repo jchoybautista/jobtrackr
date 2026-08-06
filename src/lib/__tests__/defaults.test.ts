@@ -14,6 +14,13 @@ describe("DEFAULT_STAGES", () => {
     expect(offer).toMatchObject({ id: "stage-offer", pinned: true, kind: "won" });
     expect(DEFAULT_STAGES.find((s) => s.role === "rejected")).toMatchObject({ kind: "lost" });
   });
+
+  it("regression: demo seed does not use orphaned stage-applied", () => {
+    // Verify the new stage-screening exists in defaults
+    expect(DEFAULT_STAGES.some((s) => s.id === "stage-screening")).toBe(true);
+    // Ensure old stage-applied is not in defaults (would cause demo apps to vanish)
+    expect(DEFAULT_STAGES.some((s) => s.id === "stage-applied")).toBe(false);
+  });
 });
 
 describe("DEFAULT_SETTINGS", () => {

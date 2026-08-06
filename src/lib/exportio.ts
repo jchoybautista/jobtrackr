@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Snapshot, Profile } from "./types";
+import { DEFAULT_SETTINGS } from "./repo";
 
 const paletteKey = z.enum(["pink","peach","yellow","mint","sky","lavender","orchid","gray","sage","blush"]);
 
@@ -85,7 +86,7 @@ const baseSnapshotShape = {
     dueAt: z.string(), done: z.boolean(), snoozedUntil: z.string().optional(),
   })),
   settings: z.object({
-    id: z.literal("singleton"), nudgeDays: z.number(), ghostDays: z.number(), currency: z.string(),
+    id: z.literal("singleton"), nudgeDays: z.number(), ghostDays: z.number().optional(), currency: z.string(),
     theme: z.literal("light"), demo: z.boolean(),
   }),
 };
@@ -143,15 +144,16 @@ export function fromJson(json: string): Snapshot {
     if (!parsed.success) {
       throw new Error(`Invalid JobTrackr export file: ${parsed.error.issues[0]?.path.join(".")} ${parsed.error.issues[0]?.message}`);
     }
-    return { ...parsed.data.data, profile: null, cvdocs: [] };
+    const { settings, ...data } = parsed.data.data;
+    return { ...data, settings: { ...settings, ghostDays: settings.ghostDays ?? DEFAULT_SETTINGS.ghostDays }, profile: null, cvdocs: [] };
   }
 
   const parsed = v2FileSchema.safeParse(raw);
   if (!parsed.success) {
     throw new Error(`Invalid JobTrackr export file: ${parsed.error.issues[0]?.path.join(".")} ${parsed.error.issues[0]?.message}`);
   }
-  const { profile, ...rest } = parsed.data.data;
-  return { ...rest, profile: profile ? decodeProfile(profile) : null };
+  const { profile, settings, ...rest } = parsed.data.data;
+  return { ...rest, settings: { ...settings, ghostDays: settings.ghostDays ?? DEFAULT_SETTINGS.ghostDays }, profile: profile ? decodeProfile(profile) : null };
 }
 
 const csvCell = (v: unknown): string => {
