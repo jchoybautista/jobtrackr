@@ -17,6 +17,16 @@ describe("store", () => {
     expect(s.applications.length).toBeGreaterThan(0);
   });
 
+  it("every seeded application references an existing stage", async () => {
+    await useApp.getState().hydrate();
+    const s = useApp.getState();
+    const stageIds = new Set(s.stages.map((st) => st.id));
+    expect(s.applications.length).toBeGreaterThan(0);
+    for (const a of s.applications) {
+      expect(stageIds.has(a.stageId)).toBe(true);
+    }
+  });
+
   it("addApplication appends to the first stage and logs an event", async () => {
     await useApp.getState().hydrate();
     const app = await useApp.getState().addApplication({ company: "Acme", role: "Dev" });
