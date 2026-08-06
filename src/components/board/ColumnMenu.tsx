@@ -16,6 +16,7 @@ export function ColumnMenu({ stage }: { stage: Stage }) {
   const { renameStage, removeStage } = useApp();
   const locked = !!stage.role;
   const pinned = !!stage.pinned;
+  const hasActions = !locked || !pinned;
 
   useEffect(() => {
     if (!open) return;
@@ -25,6 +26,8 @@ export function ColumnMenu({ stage }: { stage: Stage }) {
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
+
+  if (!hasActions) return null;
 
   return (
     <div ref={ref} className="relative ml-auto">

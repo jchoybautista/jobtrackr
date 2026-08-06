@@ -20,7 +20,13 @@ it("hides Rename for default (role) stages", async () => {
 });
 
 it("hides Delete for pinned stages", async () => {
-  render(<ColumnMenu stage={stage({ name: "Offer", role: "offer", pinned: true, kind: "won" })} />);
-  await userEvent.click(screen.getByLabelText("Offer column menu"));
+  render(<ColumnMenu stage={stage({ name: "Saved", pinned: true, kind: "pipeline" })} />);
+  await userEvent.click(screen.getByLabelText("Saved column menu"));
   expect(screen.queryByText("Delete")).toBeNull();
+  expect(screen.getByText("Rename")).toBeTruthy();
+});
+
+it("renders no menu trigger when a stage is both locked and pinned", () => {
+  render(<ColumnMenu stage={stage({ name: "Offer", role: "offer", pinned: true, kind: "won" })} />);
+  expect(screen.queryByLabelText(/column menu/i)).toBeNull();
 });
