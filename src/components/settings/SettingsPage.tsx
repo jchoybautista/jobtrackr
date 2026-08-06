@@ -57,7 +57,7 @@ export function SettingsPage() {
   // completed Save are the same gesture, and no state is synced in an effect.
   const [stageEdits, setStageEdits] = useState<Record<string, string>>({});
   const [tagEdits, setTagEdits] = useState<Record<string, string>>({});
-  const [prefEdits, setPrefEdits] = useState<Partial<{ nudgeDays: number; currency: string }>>({});
+  const [prefEdits, setPrefEdits] = useState<Partial<{ nudgeDays: number; ghostDays: number; currency: string }>>({});
   const [confirmStage, setConfirmStage] = useState<string | null>(null);
   const [confirmTag, setConfirmTag] = useState<string | null>(null);
 
@@ -91,7 +91,7 @@ export function SettingsPage() {
   };
 
   // Preferences used to commit on every keystroke.
-  const prefs = { nudgeDays: s.settings.nudgeDays, currency: s.settings.currency };
+  const prefs = { nudgeDays: s.settings.nudgeDays, ghostDays: s.settings.ghostDays, currency: s.settings.currency };
   const prefDraft = { ...prefs, ...prefEdits };
   const prefsDirty = isDirty(prefDraft, prefs);
 
@@ -129,10 +129,11 @@ export function SettingsPage() {
           onReorder={(_next, moved) => void s.moveStage(moved.id, moved.toIndex)}
           className="mb-3 flex flex-col gap-2"
           itemClassName="relative flex items-center gap-2.5"
+          isDraggable={(st) => !st.pinned}
         >
             {(st, handle) => (
               <>
-                {handle}
+                {handle ?? <GripSpacer />}
                 <button
                   ref={pickerFor === st.id ? dotRef : undefined}
                   type="button" aria-label={`Change ${st.name} color`} aria-expanded={pickerFor === st.id}
@@ -151,11 +152,14 @@ export function SettingsPage() {
                 <label htmlFor={`stage-${st.id}`} className="sr-only">{st.name} column name</label>
                 <input id={`stage-${st.id}`} value={stageDraft[st.id] ?? ""}
                   onChange={(e) => setStageEdits({ ...stageEdits, [st.id]: e.target.value })}
-                  className={`${input} flex-1`} />
-                <Button variant="ghost" size="sm" aria-label={`Delete ${st.name} column`}
-                  onClick={() => setConfirmStage(st.id)}>
-                  <Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden />
-                </Button>
+                  disabled={!!st.role} title={st.role ? "Default stage names are fixed" : undefined}
+                  className={`${input} flex-1 disabled:cursor-not-allowed disabled:opacity-60`} />
+                {st.pinned ? <DeleteSpacer /> : (
+                  <Button variant="ghost" size="sm" aria-label={`Delete ${st.name} column`}
+                    onClick={() => setConfirmStage(st.id)}>
+                    <Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden />
+                  </Button>
+                )}
               </>
             )}
         </SortableList>
@@ -164,13 +168,12 @@ export function SettingsPage() {
           <div role="alertdialog" aria-modal="true" aria-label="Delete column"
             className="mb-3 rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
             <p className="mb-3 text-xs font-medium">
-              Delete the “{sorted.find((st) => st.id === confirmStage)?.name}” column? Its cards must be moved out first.
+              Delete the “{sorted.find((st) => st.id === confirmStage)?.name}” column? Any cards move to the column on its left.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" size="sm" autoFocus onClick={() => setConfirmStage(null)}>Keep it</Button>
               <Button variant="danger" size="sm" onClick={async () => {
-                const ok = await s.removeStage(confirmStage);
-                if (!ok) toast("Move or delete this column’s cards first.", "error");
+                await s.removeStage(confirmStage);
                 setConfirmStage(null);
               }}>Delete column</Button>
             </div>
@@ -255,6 +258,14 @@ export function SettingsPage() {
             </label>
             <input id="nudge-days" type="number" min={1} max={60} value={prefDraft.nudgeDays}
               onChange={(e) => setPrefEdits({ ...prefEdits, nudgeDays: Math.max(1, Number(e.target.value) || 7) })}
+              className={`${input} w-28`} />
+          </div>
+          <div>
+            <label htmlFor="ghost-days" className="mb-1 block text-xs font-semibold text-ink-2">
+              Ghosted after (days)
+            </label>
+            <input id="ghost-days" type="number" min={1} max={90} value={prefDraft.ghostDays}
+              onChange={(e) => setPrefEdits({ ...prefEdits, ghostDays: Math.max(1, Number(e.target.value) || 14) })}
               className={`${input} w-28`} />
           </div>
           <div>
