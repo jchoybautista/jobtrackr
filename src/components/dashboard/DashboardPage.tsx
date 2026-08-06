@@ -8,6 +8,17 @@ import { useApp } from "@/lib/store";
 import { computeMetrics, computeNudges, dueReminders, upcomingInterviews } from "@/lib/selectors";
 import { shortDate } from "@/lib/format";
 
+const pctText = (r: number | null) => (r == null ? "—" : `${Math.round(r * 100)}%`);
+
+function TextStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-line-2 bg-surface p-5">
+      <p className="text-xs font-semibold text-ink-3">{label}</p>
+      <p className="mt-1 text-3xl font-extrabold tracking-tight">{value}</p>
+    </div>
+  );
+}
+
 function StatCard({ label, value, suffix = "" }: { label: string; value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const reduced = useReducedMotion();
@@ -52,8 +63,8 @@ export function DashboardPage() {
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Active applications" value={metrics.active} />
         <StatCard label="Response rate" value={Math.round(metrics.responseRate * 100)} suffix="%" />
-        <StatCard label="Interview rate" value={Math.round(metrics.interviewRate * 100)} suffix="%" />
-        <StatCard label="Offers" value={metrics.offers} />
+        <TextStat label="Interview pass rate" value={pctText(metrics.interviewPassRate)} />
+        <TextStat label="Technical pass rate" value={pctText(metrics.technicalPassRate)} />
       </div>
 
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
@@ -88,6 +99,12 @@ export function DashboardPage() {
             </ResponsiveContainer>
           </div>
         </section>
+      </div>
+
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        <TextStat label="Screening" value={String(metrics.screeningCount)} />
+        <TextStat label="Rejected" value={String(metrics.rejectedCount)} />
+        <TextStat label="Ghosted" value={String(metrics.ghostedCount)} />
       </div>
 
       <div className="grid gap-4 pb-8 lg:grid-cols-2">
