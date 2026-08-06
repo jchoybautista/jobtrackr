@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Plus } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -20,6 +21,7 @@ export interface ColumnProps {
   noteCountByApp: Map<string, number>;
   docCountByApp: Map<string, number>;
   onCardClick: (id: string) => void;
+  onQuickAdd: (stageId: string) => void;
 }
 
 function SortableCard(props: JobCardProps) {
@@ -39,7 +41,7 @@ function SortableCard(props: JobCardProps) {
 }
 
 export function Column({
-  stage, apps, tagById, nudges, nextInterviewByApp, noteCountByApp, docCountByApp, onCardClick,
+  stage, apps, tagById, nudges, nextInterviewByApp, noteCountByApp, docCountByApp, onCardClick, onQuickAdd,
 }: ColumnProps) {
   const tints = columnTints(stage.color);
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
@@ -49,7 +51,7 @@ export function Column({
 
   return (
     <section aria-label={`${stage.name} column, ${apps.length} applications`}
-      className="flex w-[248px] shrink-0 snap-start flex-col">
+      className="group/col flex w-[248px] shrink-0 snap-start flex-col">
       <header className="relative mb-2.5 flex items-center gap-2 px-0.5">
         <button
           ref={dotRef}
@@ -100,6 +102,13 @@ export function Column({
               Drop a card here
             </p>
           )}
+          <button
+            type="button"
+            onClick={() => onQuickAdd(stage.id)}
+            className="mt-0.5 flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-medium text-ink-3 opacity-0 transition-opacity hover:bg-sunken focus-visible:opacity-100 group-hover/col:opacity-100"
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden /> Add
+          </button>
         </div>
       </SortableContext>
     </section>

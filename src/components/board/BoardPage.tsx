@@ -17,6 +17,7 @@ export function BoardPage() {
   const s = useApp();
   const nowIso = new Date().toISOString();
   const [addOpen, setAddOpen] = useState(false);
+  const [quickAddStage, setQuickAddStage] = useState<string | undefined>(undefined);
   const [kOpen, setKOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilters = countActiveFilters(s.filters);
@@ -117,12 +118,17 @@ export function BoardPage() {
               noteCountByApp={noteCountByApp}
               docCountByApp={docCountByApp}
               onCardClick={(id) => s.selectApp(id)}
+              onQuickAdd={(stageId) => { setQuickAddStage(stageId); setAddOpen(true); }}
             />
           ))}
         </div>
       </DragBoard>
 
-      <AddJobDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddJobDialog
+        open={addOpen}
+        onClose={() => { setAddOpen(false); setQuickAddStage(undefined); }}
+        initialStageId={quickAddStage}
+      />
       <CommandK open={kOpen} onClose={() => setKOpen(false)} onAddJob={() => setAddOpen(true)} />
       <DetailPanel />
     </div>

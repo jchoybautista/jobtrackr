@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { parseQuickAdd } from "@/lib/quickadd";
@@ -19,11 +19,17 @@ const EMPTY = {
   tagIds: [] as string[],
 };
 
-export function AddJobDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddJobDialog(
+  { open, onClose, initialStageId }: { open: boolean; onClose: () => void; initialStageId?: string },
+) {
   const { stages, tags, addApplication } = useApp();
   const [form, setForm] = useState(EMPTY);
   const [paste, setPaste] = useState("");
   const set = (patch: Partial<typeof EMPTY>) => setForm((f) => ({ ...f, ...patch }));
+
+  useEffect(() => {
+    if (open) setForm({ ...EMPTY, stageId: initialStageId ?? "" });
+  }, [open, initialStageId]);
 
   function applyPaste(text: string) {
     setPaste(text);

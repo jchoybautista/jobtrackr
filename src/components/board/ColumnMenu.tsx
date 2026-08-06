@@ -6,7 +6,6 @@ import type { Stage } from "@/lib/types";
 import { useApp } from "@/lib/store";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
-import { toast } from "@/components/ui/Toast";
 
 export function ColumnMenu({ stage }: { stage: Stage }) {
   const [open, setOpen] = useState(false);
@@ -14,8 +13,9 @@ export function ColumnMenu({ stage }: { stage: Stage }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [name, setName] = useState(stage.name);
   const ref = useRef<HTMLDivElement>(null);
-  const { renameStage, removeStage, applications } = useApp();
-  const hasCards = applications.some((a) => a.stageId === stage.id);
+  const { renameStage, removeStage } = useApp();
+  const locked = !!stage.role;
+  const pinned = !!stage.pinned;
 
   useEffect(() => {
     if (!open) return;
@@ -37,20 +37,20 @@ export function ColumnMenu({ stage }: { stage: Stage }) {
       </button>
       {open && (
         <div className="absolute right-0 top-8 z-30 w-40 rounded-2xl border border-line-2 bg-surface p-1.5 shadow-xl">
-          <button type="button"
-            onClick={() => { setRenaming(true); setOpen(false); }}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium hover:bg-sunken">
-            <Pencil className="h-3.5 w-3.5" aria-hidden /> Rename
-          </button>
-          <button type="button"
-            onClick={() => {
-              setOpen(false);
-              if (hasCards) { toast("Move or delete this column’s cards first.", "error"); return; }
-              setConfirmDelete(true);
-            }}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-danger hover:bg-danger-bg">
-            <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete
-          </button>
+          {!locked && (
+            <button type="button"
+              onClick={() => { setRenaming(true); setOpen(false); }}
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium hover:bg-sunken">
+              <Pencil className="h-3.5 w-3.5" aria-hidden /> Rename
+            </button>
+          )}
+          {!pinned && (
+            <button type="button"
+              onClick={() => { setOpen(false); setConfirmDelete(true); }}
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-danger hover:bg-danger-bg">
+              <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete
+            </button>
+          )}
         </div>
       )}
 
@@ -69,7 +69,7 @@ export function ColumnMenu({ stage }: { stage: Stage }) {
       </Dialog>
 
       <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete column?">
-        <p className="mb-4 text-sm text-ink-2">“{stage.name}” will be removed from your pipeline.</p>
+        <p className="mb-4 text-sm text-ink-2">“{stage.name}” will be removed; any cards move to the column on its left.</p>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirmDelete(false)}>Cancel</Button>
           <Button variant="danger" onClick={() => { void removeStage(stage.id); setConfirmDelete(false); }}>Delete</Button>
