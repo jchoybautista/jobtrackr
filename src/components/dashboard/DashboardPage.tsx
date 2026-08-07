@@ -6,7 +6,8 @@ import { animate, useReducedMotion } from "motion/react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApp } from "@/lib/store";
 import { computeMetrics, computeNudges, dueReminders, upcomingInterviews } from "@/lib/selectors";
-import { shortDate } from "@/lib/format";
+import { sortApplications } from "@/lib/table";
+import { formatSalary, shortDate } from "@/lib/format";
 
 const pctText = (r: number | null) => (r == null ? "—" : `${Math.round(r * 100)}%`);
 
@@ -52,6 +53,11 @@ export function DashboardPage() {
   const due = dueReminders(s.reminders, nowIso);
   const interviews = upcomingInterviews(s.interviews, nowIso).slice(0, 5);
   const appById = new Map(s.applications.map((a) => [a.id, a]));
+  const stageById = useMemo(() => new Map(s.stages.map((st) => [st.id, st])), [s.stages]);
+  const topOffers = useMemo(() => {
+    const withSalary = s.applications.filter((a) => a.salaryMin != null || a.salaryMax != null);
+    return sortApplications(withSalary, "salary", "desc", s.stages, nowIso).slice(0, 5);
+  }, [s.applications, s.stages, nowIso]);
 
   const openApp = (id: string) => { s.selectApp(id); router.push("/"); };
 
@@ -106,6 +112,39 @@ export function DashboardPage() {
         <TextStat label="Rejected" value={String(metrics.rejectedCount)} />
         <TextStat label="Ghosted" value={String(metrics.ghostedCount)} />
       </div>
+
+      <section aria-label="Top offers" className="mb-6 rounded-2xl border border-line-2 bg-surface p-5">
+        <h2 className="mb-3 text-sm font-bold">Top offers</h2>
+        {topOffers.length === 0 ? (
+          <p className="text-xs text-ink-3">No salary figures yet — add an expected or offered amount to an application to see it ranked here.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-line-2 text-ink-3">
+                <tr>
+                  <th className="px-2 py-2 text-left text-xs font-semibold">Company</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold">Role</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold">Status</th>
+                  <th className="px-2 py-2 text-right text-xs font-semibold">Offer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topOffers.map((a) => (
+                  <tr key={a.id} className="border-b border-line last:border-0 hover:bg-sunken">
+                    <td className="px-2 py-2">
+                      <button type="button" aria-label={`Open ${a.company}`} onClick={() => openApp(a.id)}
+                        className="font-semibold hover:underline">{a.company}</button>
+                    </td>
+                    <td className="px-2 py-2 text-ink-2">{a.role}</td>
+                    <td className="px-2 py-2 text-ink-2">{stageById.get(a.stageId)?.name ?? "—"}</td>
+                    <td className="px-2 py-2 text-right font-semibold">{formatSalary(a) ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <div className="grid gap-4 pb-8 lg:grid-cols-2">
         <section aria-label="Upcoming interviews" className="rounded-2xl border border-line-2 bg-surface p-5">
