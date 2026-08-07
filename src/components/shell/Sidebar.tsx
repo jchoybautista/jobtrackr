@@ -21,7 +21,7 @@ export function Sidebar() {
   const dueCount = dueReminders(reminders, new Date().toISOString()).length;
 
   return (
-    <nav aria-label="Main menu" className="hidden md:flex md:w-16 lg:w-56 shrink-0 flex-col border-r border-line-2 bg-[#f2f2f2] px-3 py-5">
+    <nav aria-label="Main menu" className="hidden md:flex md:w-16 lg:w-56 shrink-0 flex-col bg-[#f2f2f2] px-3 py-5">
       <Link href="/" className="mb-7 flex items-center gap-2.5 px-2" aria-label="JobTrackr home">
         <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-ink text-sm font-extrabold text-white">J</span>
         <span className="hidden text-[15px] font-extrabold tracking-tight lg:inline">JobTrackr</span>
