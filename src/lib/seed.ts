@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { currentDb } from "./db";
 import {
   DEFAULT_SETTINGS, deleteApplication, deleteCvDoc, deleteCvThumb, deleteProfile,
   deleteReminder, importSnapshot, loadAll, putSettings,
@@ -598,7 +598,7 @@ export function demoSnapshot(now: Date): Snapshot {
 }
 
 export async function seedIfEmpty(now: Date = new Date()): Promise<boolean> {
-  const count = await db.stages.count();
+  const count = await currentDb().stages.count();
   if (count > 0) return false;
   await importSnapshot(demoSnapshot(now), "replace");
   return true;
