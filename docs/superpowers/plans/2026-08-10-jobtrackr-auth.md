@@ -470,8 +470,14 @@ import { decideRoute, DEMO_COOKIE } from "@/lib/auth/routes";
 export async function middleware(request: NextRequest) {
   const { response, hasSession } = await updateSession(request);
 
+  // decideRoute matches auth paths by exact equality, so "/login/" would slip
+  // past the auth-path branch and land in the protected-route one. Normalize
+  // the trailing slash rather than loosening the matcher.
+  const raw = request.nextUrl.pathname;
+  const path = raw.length > 1 ? raw.replace(/\/+$/, "") : raw;
+
   const decision = decideRoute({
-    path: request.nextUrl.pathname,
+    path,
     hasSession,
     hasDemoCookie: request.cookies.has(DEMO_COOKIE),
   });
@@ -1789,7 +1795,85 @@ EOF
 
 **Interfaces:**
 - Consumes: `AuthCard`, `AuthField` (Task 9); `signInSchema`, `firstErrors` (Task 4); `authErrorMessage` (Task 4); `createBrowserSupabase` (Task 1).
-- Produces: `<LoginForm />`.
+- Produces: `<LoginForm />`; `safeNextPath(raw: string | null): string` added to `src/lib/auth/routes.ts`.
+
+### Step 0: close the open redirect first
+
+`decideRoute` writes `?next=%2Fdashboard`, and this form reads it back to decide where to land. `encodeURIComponent` protects the *write*; nothing protects the *read*. An attacker sends `https://jobtrackr.app/login?next=//evil.com`, the victim signs in, and `router.push("//evil.com")` follows a protocol-relative URL straight off-site. Validate before navigating.
+
+- [ ] **Step 0a: Write the failing test**
+
+Append to `src/lib/auth/__tests__/routes.test.ts`:
+
+```ts
+import { safeNextPath } from "@/lib/auth/routes";
+
+describe("safeNextPath", () => {
+  it("keeps an ordinary in-app path", () => {
+    expect(safeNextPath("/dashboard")).toBe("/dashboard");
+    expect(safeNextPath("/cv/demo-cv-2")).toBe("/cv/demo-cv-2");
+  });
+
+  it("falls back to the board when there is no next param", () => {
+    expect(safeNextPath(null)).toBe("/");
+    expect(safeNextPath("")).toBe("/");
+  });
+
+  it("refuses a protocol-relative URL", () => {
+    // The open-redirect vector: router.push("//evil.com") leaves the site.
+    expect(safeNextPath("//evil.com")).toBe("/");
+    expect(safeNextPath("/\\evil.com")).toBe("/");
+  });
+
+  it("refuses an absolute URL", () => {
+    expect(safeNextPath("https://evil.com")).toBe("/");
+    expect(safeNextPath("javascript:alert(1)")).toBe("/");
+  });
+
+  it("refuses anything not rooted at a single slash", () => {
+    expect(safeNextPath("dashboard")).toBe("/");
+    expect(safeNextPath("../etc/passwd")).toBe("/");
+  });
+
+  it("does not bounce a signed-in user back to an auth page", () => {
+    // Landing on /login straight after signing in reads as a failed sign-in.
+    expect(safeNextPath("/login")).toBe("/");
+    expect(safeNextPath("/signup")).toBe("/");
+  });
+});
+```
+
+- [ ] **Step 0b: Run it to verify it fails**
+
+Run: `npx vitest run src/lib/auth/__tests__/routes.test.ts`
+Expected: FAIL — `safeNextPath` is not exported.
+
+- [ ] **Step 0c: Implement it**
+
+Append to `src/lib/auth/routes.ts`:
+
+```ts
+/**
+ * Where to land after signing in, given an untrusted `next` param.
+ *
+ * decideRoute encodes this value on the way out; nothing guarantees what comes
+ * back. A protocol-relative value like "//evil.com" is a working open redirect
+ * once it reaches router.push, so anything that is not plainly an in-app path
+ * falls back to the board.
+ */
+export function safeNextPath(raw: string | null): string {
+  if (!raw) return "/";
+  // Single leading slash only: "//" and "/\" are both protocol-relative.
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "/";
+  if ((AUTH_PATHS as readonly string[]).includes(raw)) return "/";
+  return raw;
+}
+```
+
+- [ ] **Step 0d: Run it to verify it passes**
+
+Run: `npx vitest run src/lib/auth/__tests__/routes.test.ts`
+Expected: PASS (16 tests — the original 10 plus 6 new).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1885,6 +1969,7 @@ import { Button } from "@/components/ui/Button";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { signInSchema, firstErrors } from "@/lib/auth/schemas";
 import { authErrorMessage } from "@/lib/auth/messages";
+import { safeNextPath } from "@/lib/auth/routes";
 import { AuthCard } from "./AuthCard";
 import { AuthField } from "./AuthField";
 
@@ -1919,8 +2004,10 @@ export function LoginForm() {
       setBusy(false);
       return;
     }
+    // safeNextPath, not the raw param: "//evil.com" would otherwise walk the
+    // user off the site the moment they signed in.
     // refresh() so the server layout re-resolves the scope before we land.
-    router.push(params.get("next") ?? "/");
+    router.push(safeNextPath(params.get("next")));
     router.refresh();
   }
 
