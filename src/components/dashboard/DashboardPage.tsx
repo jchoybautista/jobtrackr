@@ -64,6 +64,15 @@ export function DashboardPage() {
     return sortApplications(withSalary, "salary", "desc", s.stages, nowIso).slice(0, 5);
   }, [s.applications, s.stages, nowIso]);
 
+  // Keep the 0–5 axis of a quiet week, but grow (in whole-number steps that land
+  // on the top gridline) once a busy week would otherwise draw past the top.
+  const yAxis = useMemo(() => {
+    const peak = Math.max(5, ...metrics.weekly.map((w) => w.count));
+    const step = Math.ceil(peak / 5);
+    const top = step * Math.ceil(peak / step);
+    return { domain: [0, top] as [number, number], ticks: Array.from({ length: top / step + 1 }, (_, i) => i * step) };
+  }, [metrics.weekly]);
+
   const openApp = (id: string) => { s.selectApp(id); router.push("/"); };
   const noApps = s.applications.length === 0;
   const noWeekly = metrics.weekly.every((w) => w.count === 0);
@@ -128,7 +137,7 @@ export function DashboardPage() {
                   be clipped, so recharts nudges it down and that one gap goes uneven. */}
               <BarChart data={metrics.weekly} margin={{ top: 8, right: 0, bottom: 0, left: -28 }} barCategoryGap="18%">
                 <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#6b6b6b" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "#6b6b6b" }} axisLine={false} tickLine={false} allowDecimals={false} domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} />
+                <YAxis tick={{ fontSize: 12, fill: "#6b6b6b" }} axisLine={false} tickLine={false} allowDecimals={false} domain={yAxis.domain} ticks={yAxis.ticks} />
                 <Tooltip cursor={{ fill: "#f5f5f5" }} contentStyle={{ borderRadius: 12, border: "1px solid #e5e5e5", fontSize: 12 }} />
                 <Bar dataKey="count" fill="#1a1a1a" radius={[6, 6, 0, 0]} maxBarSize={56} />
               </BarChart>

@@ -11,10 +11,12 @@ beforeEach(async () => {
 
 describe("cv persistence", () => {
   it("saveProfile upserts the singleton and loadAll returns it", async () => {
+    const before = (await loadAll()).cvdocs.length;
     await useApp.getState().saveProfile({ ...profileContent() });
     const snap = await loadAll();
     expect(snap.profile?.content.fullName).toBe("Jon B");
-    expect(snap.cvdocs).toEqual([]);
+    // editing the master profile must not spawn or touch CVs
+    expect(snap.cvdocs).toHaveLength(before);
   });
 
   it("createCv snapshots the profile content independently", async () => {

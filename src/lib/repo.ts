@@ -48,6 +48,7 @@ export const putReminder = (x: Reminder) => db.reminders.put(x).then(() => {});
 export const putSettings = (x: SettingsDoc) => db.settings.put(x).then(() => {});
 export const putProfile = (x: Profile) => db.profile.put(x).then(() => {});
 export const putCvDoc = (x: CvDoc) => db.cvdocs.put(x).then(() => {});
+export const deleteProfile = () => db.profile.delete("singleton");
 export const deleteCvDoc = (id: string) => db.cvdocs.delete(id);
 export const putCvThumb = (x: CvThumb) => db.cvthumbs.put(x).then(() => {});
 export const getCvThumb = (id: string) => db.cvthumbs.get(id);
