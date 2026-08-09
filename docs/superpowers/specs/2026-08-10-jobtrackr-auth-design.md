@@ -75,7 +75,7 @@ Middleware also refreshes the Supabase session cookie on every pass, which is wh
 1. Sets a `jobtrackr-demo` cookie — 30 days, `SameSite=Lax`, `Secure` in production. Not `httpOnly`: it grants nothing but access to a local sandbox.
 2. Redirects to `/`, where the store hydrates against the `jobtrackr-demo` Dexie namespace and seeds the existing demo dataset if empty.
 
-`/auth/demo` is exempt from the "auth route + session → redirect `/`" rule: a signed-in user following it lands in the demo sandbox deliberately.
+Middleware does not intercept `/auth/*` at all — those handlers manage their own cookies and redirects. `/auth/demo` makes its own decision instead: a visitor who already has a session is sent to `/` without a cookie being set, because scope resolution puts an account ahead of the demo cookie and nobody with a real board should land in a sandbox.
 
 No Supabase user is created, so there is nothing to rate limit, reset, or clean up, and no MAU cost.
 
