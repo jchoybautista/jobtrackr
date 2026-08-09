@@ -23,6 +23,7 @@
 - **Accessibility (WCAG 2.1 AA):** every input has a real `<label>`; errors wired with `aria-invalid` + `aria-describedby`; form-level errors in `role="alert"`; correct `autoComplete` tokens; submit disabled + `aria-busy` while in flight; 44×44px minimum targets; visible focus rings.
 - **SEO:** all four auth pages export `robots: { index: false, follow: false }`.
 - **Existing conventions:** use `Button` from `@/components/ui/Button`, `inputClass`/`labelClass` from `@/components/cv/form-kit`, `toast()` from `@/components/ui/Toast`. Card surfaces are `rounded-2xl border border-line-2 bg-surface`.
+- **The four auth forms stay independent** — no shared `useAuthForm` hook or form abstraction. Ruled on by the project owner during pre-flight: the forms diverge (two have inbox states, one has a demo link, one has no email field), and each staying readable start to finish beats one helper flexing for four shapes. Repeated `useState`/submit/error-banner scaffolding across the four is therefore intended, not a defect. Shared *presentation* stays factored (`AuthCard`, `AuthField`).
 - **Commit style:** conventional commits, and every commit message ends with the `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>` trailer.
 - **Verification gate:** `npx tsc --noEmit` and `npx vitest run` must both pass before any commit.
 
@@ -196,8 +197,11 @@ import { cookies } from "next/headers";
 import { supabaseEnv } from "./env";
 
 export async function createServerSupabase() {
-  const { url, anonKey } = supabaseEnv();
+  // cookies() first, deliberately. It is what tells Next this route renders
+  // dynamically; if the env check threw ahead of it, `next build` would die
+  // trying to prerender the app routes instead of marking them dynamic.
   const cookieStore = await cookies();
+  const { url, anonKey } = supabaseEnv();
 
   return createServerClient(url, anonKey, {
     cookies: {
@@ -1581,7 +1585,9 @@ In `src/app/layout.tsx`, remove the `AppShell` import and replace the body conte
 - [ ] **Step 6: Verify the build and URLs**
 
 Run: `npx tsc --noEmit && npm run build`
-Expected: build succeeds; the route list shows `/`, `/dashboard`, `/applications`, `/cv`, `/cv/[id]`, `/cv/profile`, `/reminders`, `/settings` — route groups must not appear in any path.
+Expected: build succeeds; the route list shows `/`, `/dashboard`, `/applications`, `/cv`, `/cv/[id]`, `/cv/profile`, `/reminders`, `/settings` — route groups must not appear in any path. Those routes are now marked dynamic (ƒ) rather than static (○), because the layout reads cookies.
+
+The build must succeed **without** `.env.local` present. If it fails with the `NEXT_PUBLIC_SUPABASE_URL is not set` message, `createServerSupabase` is calling `supabaseEnv()` before `await cookies()` — fix the order (Task 1), don't add env vars to make the build pass.
 
 - [ ] **Step 7: Commit**
 
