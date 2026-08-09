@@ -854,6 +854,21 @@ describe("database scoping", () => {
     closeDb();
     expect(() => currentDb()).toThrow(/scope/i);
   });
+
+  it("closes the connection and evicts it, without losing data", async () => {
+    setScope({ kind: "user", userId: "u3" });
+    const first = currentDb();
+    await first.tags.put({ id: "t1", name: "Survives sign-out", preset: false });
+
+    closeDb();
+    expect(first.isOpen()).toBe(false);
+
+    // A fresh handle, not the closed one — reusing it would throw
+    // DatabaseClosedError on the next read.
+    setScope({ kind: "user", userId: "u3" });
+    expect(currentDb()).not.toBe(first);
+    expect(await currentDb().tags.count()).toBe(1);
+  });
 });
 ```
 
@@ -966,8 +981,16 @@ export function currentDb(): JobTrackrDb {
   return active;
 }
 
-/** Sign-out: drop the handle, keep every byte on disk. */
+/**
+ * Sign-out: close the connection and forget the handle, keeping every byte on
+ * disk. Both halves matter — an open connection blocks version upgrades in
+ * other tabs, and evicting without closing would leak one per account, while
+ * closing without evicting would hand the next openDb a dead handle.
+ */
 export function closeDb(): void {
+  if (!active) return;
+  instances.delete(active.name);
+  active.close();
   active = null;
 }
 ```
@@ -1348,6 +1371,15 @@ describe("hydrate(scope)", () => {
     expect(useApp.getState().applications).toHaveLength(1);
   });
 
+  it("drops a slow hydrate that a newer one superseded", async () => {
+    // u1's read is still in flight when u2 signs in; u1's snapshot must not
+    // land in u2's UI.
+    const slow = useApp.getState().hydrate({ kind: "user", userId: "u1" });
+    const fresh = useApp.getState().hydrate({ kind: "user", userId: "u2" });
+    await Promise.all([slow, fresh]);
+    expect(currentDb().name).toBe("jobtrackr-u2");
+  });
+
   it("resetLocal empties the store without deleting data", async () => {
     await useApp.getState().hydrate({ kind: "user", userId: "u1" });
     await useApp.getState().addApplication({ company: "Acme", role: "Dev" });
@@ -1387,6 +1419,10 @@ Replace the `hydrate` implementation:
 
 ```ts
   async hydrate(scope) {
+    // Switching accounts mid-load must not let the previous account's snapshot
+    // land in the new account's UI: loadAll() binds its database before eleven
+    // awaits, so a slow read can outlive the scope that started it.
+    const seq = ++hydrateSeq;
     try {
       setScope(scope);
       // First sign-in on a device that predates accounts: claim the old data
@@ -1403,8 +1439,10 @@ Replace the `hydrate` implementation:
         await repo.importSnapshot(snap, "replace");
         snap = await repo.loadAll();
       }
+      if (seq !== hydrateSeq) return;  // a newer hydrate superseded this one
       set(() => ({ ...snap, ready: true }));
     } catch {
+      if (seq !== hydrateSeq) return;
       set(() => ({
         stages: DEFAULT_STAGES, tags: PRESET_TAGS,
         settings: repo.DEFAULT_SETTINGS, profile: null, cvdocs: [],
@@ -1422,6 +1460,13 @@ Replace the `hydrate` implementation:
       filters: EMPTY_FILTERS,
     }));
   },
+```
+
+Add the generation counter beside `nowIso` at the top of the file:
+
+```ts
+/** Guards against a slow hydrate landing after the user switched accounts. */
+let hydrateSeq = 0;
 ```
 
 Add `ensureBaseline` beside `logEvent` near the top of the file — a real account needs stages and preset tags, but no sample applications:
