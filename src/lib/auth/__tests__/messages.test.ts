@@ -24,6 +24,27 @@ describe("authErrorMessage", () => {
       .toMatch(/8 characters/);
   });
 
+  it("tells a returning user to sign in instead, in both Supabase phrasings", () => {
+    // Reachable from the public sign-up form. Pinned because four later tasks
+    // assert against this exact copy.
+    for (const raw of [
+      "User already registered",
+      "A user with this email address has already been registered",
+    ]) {
+      expect(authErrorMessage(raw)).toMatch(/already registered/i);
+    }
+  });
+
+  it("recognises every phrasing Supabase uses for a dead link", () => {
+    for (const raw of [
+      "Token has expired",
+      "Email link is invalid or has expired",
+      "Invalid token",
+    ]) {
+      expect(authErrorMessage(raw)).toMatch(/expired/i);
+    }
+  });
+
   it("falls back to something actionable, never a raw code", () => {
     const msg = authErrorMessage("AuthApiError: unexpected_failure");
     expect(msg).toMatch(/try again/i);
