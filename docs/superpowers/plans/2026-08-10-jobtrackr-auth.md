@@ -45,7 +45,7 @@
 | `src/lib/auth/messages.ts` | Supabase error → plain-language, non-disclosing message |
 | `src/lib/auth/scope.ts` | Server-only: resolve `DbScope` from session or demo cookie |
 | `src/lib/legacy.ts` | One-time adoption of the pre-auth `jobtrackr` database |
-| `middleware.ts` | Root middleware: refresh session, apply `decideRoute` |
+| `src/middleware.ts` | Middleware: refresh session, apply `decideRoute`. Must live in `src/`, not the repo root — this project keeps its App Router at `src/app`, and Next never invokes a root-level middleware in that layout (verified empirically during Task 3). |
 | `src/components/auth/AuthCard.tsx` | Shared auth page shell (logo, heading, card) |
 | `src/components/auth/AuthField.tsx` | Labelled input with full error wiring |
 | `src/components/auth/LoginForm.tsx` | Sign-in form + demo link |
@@ -416,7 +416,7 @@ EOF
 ## Task 3: Middleware wiring
 
 **Files:**
-- Create: `src/lib/supabase/middleware.ts`, `middleware.ts` (repo root)
+- Create: `src/lib/supabase/middleware.ts`, `src/middleware.ts`
 
 **Interfaces:**
 - Consumes: `supabaseEnv()` (Task 1), `decideRoute`, `DEMO_COOKIE` (Task 2).
@@ -460,7 +460,7 @@ export async function updateSession(
 
 - [ ] **Step 2: Write the middleware**
 
-Create `middleware.ts` at the repository root:
+Create `src/middleware.ts` (in `src/`, beside `app/` — NOT the repo root; with an `src/app` layout Next silently never invokes a root-level middleware):
 
 ```ts
 import { NextResponse, type NextRequest } from "next/server";
@@ -513,7 +513,7 @@ Expected: `500` — and the dev server log names `NEXT_PUBLIC_SUPABASE_URL`, not
 - [ ] **Step 5: Commit**
 
 ```bash
-git add middleware.ts src/lib/supabase/middleware.ts
+git add src/middleware.ts src/lib/supabase/middleware.ts
 git commit -m "$(cat <<'EOF'
 feat(auth): protect routes in middleware
 
@@ -3255,7 +3255,7 @@ Also update the roadmap line: `- **Later** — auth + cloud sync, dark mode, PWA
 ```bash
 npx tsc --noEmit
 npx vitest run
-npx eslint src middleware.ts
+npx eslint src
 E2E_PORT=3000 npx playwright test
 npm run build
 ```
