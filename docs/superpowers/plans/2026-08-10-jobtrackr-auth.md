@@ -494,8 +494,12 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except Next internals and static assets.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Everything except Next internals, static assets, and the two things that
+    // must stay reachable without a session: the OG image (or every social
+    // preview redirects to the sign-in page) and the .ttf files react-pdf
+    // fetches at render time (which would otherwise cost a getUser() round
+    // trip per font, per render).
+    "/((?!_next/static|_next/image|favicon.ico|opengraph-image|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|ttf|woff|woff2)$).*)",
   ],
 };
 ```
