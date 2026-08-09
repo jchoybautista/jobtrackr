@@ -97,7 +97,15 @@ export function currentDb(): JobTrackrDb {
   return active;
 }
 
-/** Sign-out: drop the handle, keep every byte on disk. */
+/**
+ * Sign-out: close the connection and forget the handle, keeping every byte on
+ * disk. Both halves matter — an open connection blocks version upgrades in
+ * other tabs, and evicting without closing would leak one per account, while
+ * closing without evicting would hand the next openDb a dead handle.
+ */
 export function closeDb(): void {
+  if (!active) return;
+  instances.delete(active.name);
+  active.close();
   active = null;
 }

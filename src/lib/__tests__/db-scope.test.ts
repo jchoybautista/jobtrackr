@@ -58,4 +58,19 @@ describe("database scoping", () => {
     closeDb();
     expect(() => currentDb()).toThrow(/scope/i);
   });
+
+  it("closes the connection and evicts it, without losing data", async () => {
+    setScope({ kind: "user", userId: "u3" });
+    const first = currentDb();
+    await first.tags.put({ id: "t1", name: "Survives sign-out", preset: false });
+
+    closeDb();
+    expect(first.isOpen()).toBe(false);
+
+    // A fresh handle, not the closed one — reusing it would throw
+    // DatabaseClosedError on the next read.
+    setScope({ kind: "user", userId: "u3" });
+    expect(currentDb()).not.toBe(first);
+    expect(await currentDb().tags.count()).toBe(1);
+  });
 });
