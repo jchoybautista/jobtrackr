@@ -30,13 +30,13 @@ export function AddColumn() {
             }}
             onBlur={() => { setAdding(false); setName(""); }}
             placeholder="Column name"
-            className="w-full rounded-xl border border-line px-3 py-2 text-sm"
+            className="w-full rounded-xl border border-line px-3 py-2 text-base"
           />
         </div>
       ) : (
         <button
           type="button" onClick={() => setAdding(true)}
-          className="flex items-center gap-1.5 rounded-2xl border border-dashed border-line px-3 py-2.5 text-xs font-medium text-ink-3 hover:bg-sunken"
+          className="flex items-center gap-1.5 rounded-2xl border border-dashed border-line px-3 py-2.5 text-sm font-medium text-ink-3 hover:bg-sunken"
         >
           <Plus className="h-4 w-4" aria-hidden /> Add column
         </button>

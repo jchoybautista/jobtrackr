@@ -77,8 +77,8 @@ export function Column({
             excludeRef={dotRef}
           />
         )}
-        <h2 className="text-[13px] font-bold">{stage.name}</h2>
-        <span className="rounded-full bg-sunken px-2 py-0.5 text-[10px] font-semibold text-ink-3">
+        <h2 className="text-base font-bold">{stage.name}</h2>
+        <span className="rounded-full bg-sunken px-2 py-0.5 text-xs font-semibold text-ink-3">
           {String(apps.length).padStart(2, "0")}
         </span>
         {!stage.pinned && (
@@ -116,14 +116,14 @@ export function Column({
             />
           ))}
           {apps.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-xs text-ink-3">
+            <p className="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-sm text-ink-3">
               Drop a card here
             </p>
           )}
           <button
             type="button"
             onClick={() => onQuickAdd(stage.id)}
-            className="mt-0.5 flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-medium text-ink-3 opacity-0 transition-opacity hover:bg-sunken focus-visible:opacity-100 group-hover/col:opacity-100"
+            className="mt-0.5 flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-3 opacity-0 transition-opacity hover:bg-sunken focus-visible:opacity-100 group-hover/col:opacity-100"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden /> Add
           </button>

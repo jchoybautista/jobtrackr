@@ -28,9 +28,53 @@ it("lists applications and filters by outcome", async () => {
   render(<ApplicationsPage />);
   expect(screen.getByText("Stripe")).toBeTruthy();
   expect(screen.getByText("Grab")).toBeTruthy();
-  await userEvent.click(screen.getByRole("button", { name: "Outcome: Rejected" }));
+  await userEvent.click(screen.getByRole("button", { name: "Outcome: All" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: "Rejected" }));
   expect(screen.queryByText("Stripe")).toBeNull();
   expect(screen.getByText("Grab")).toBeTruthy();
+});
+
+it("keeps several outcomes selected at once", async () => {
+  render(<ApplicationsPage />);
+  await userEvent.click(screen.getByRole("button", { name: "Outcome: All" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: "Rejected" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: "Active" }));
+  expect((screen.getByRole("checkbox", { name: "Rejected" }) as HTMLInputElement).checked).toBe(true);
+  expect((screen.getByRole("checkbox", { name: "Active" }) as HTMLInputElement).checked).toBe(true);
+  expect(screen.getByRole("button", { name: /Outcome: Active \+1/ })).toBeTruthy();
+  expect(screen.getByText("Stripe")).toBeTruthy();
+  expect(screen.getByText("Grab")).toBeTruthy();
+});
+
+it("offers a way out when filters match nothing", async () => {
+  useApp.setState({ applications: [app("1", "Stripe", "stage-interview")] });
+  render(<ApplicationsPage />);
+  await userEvent.click(screen.getByRole("button", { name: "Outcome: All" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: "Offer" }));
+  await userEvent.keyboard("{Escape}");
+  expect(screen.getByText("No applications match these filters")).toBeTruthy();
+  const escapes = screen.getAllByRole("button", { name: /clear filters/i });
+  await userEvent.click(escapes[escapes.length - 1]);
+  expect(screen.getByText("Stripe")).toBeTruthy();
+});
+
+it("shows a first-run empty state with no applications", () => {
+  useApp.setState({ applications: [] });
+  render(<ApplicationsPage />);
+  expect(screen.getByText("No applications yet")).toBeTruthy();
+  expect(screen.getByRole("button", { name: /add job/i })).toBeTruthy();
+});
+
+it("marks the sorted column for assistive tech", async () => {
+  render(<ApplicationsPage />);
+  const company = screen.getByRole("columnheader", { name: /company/i });
+  expect(company.getAttribute("aria-sort")).toBe("none");
+  await userEvent.click(screen.getByRole("button", { name: "Sort by Company" }));
+  expect(screen.getByRole("columnheader", { name: /company/i }).getAttribute("aria-sort"))
+    .toBe("ascending");
+  await userEvent.click(screen.getByRole("button", { name: /Sort by Company, currently ascending/ }));
+  expect(screen.getByRole("columnheader", { name: /company/i }).getAttribute("aria-sort"))
+    .toBe("descending");
 });
 
 it("selects an app when a row is clicked", async () => {

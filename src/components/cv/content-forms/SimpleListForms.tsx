@@ -8,17 +8,18 @@ import type {
   AwardEntry, CertEntry, LanguageEntry, ProjectEntry, ReferenceEntry, VolunteerEntry,
 } from "@/cv/types";
 import {
-  Area, BulletsEditor, EntryShell, Field,
+  Area, BulletsEditor, EmptyHint, EntryShell, Field,
   replaceAt, removeAt, moveItem, type ContentFormProps,
 } from "../form-kit";
 
 /* Shared plumbing for the simple entry-list forms: add / remove / reorder /
    per-entry patch, all producing fresh arrays for the onChange patch. */
-function EntryList<T extends { id: string }>({ entries, commit, title, addLabel, makeEntry, renderFields }: {
+function EntryList<T extends { id: string }>({ entries, commit, title, addLabel, emptyHint, makeEntry, renderFields }: {
   entries: T[];
   commit: (next: T[]) => void;
   title: (entry: T) => string;
   addLabel: string;
+  emptyHint: string;
   makeEntry: () => T;
   renderFields: (entry: T, patch: (p: Partial<T>) => void) => ReactNode;
 }) {
@@ -32,6 +33,7 @@ function EntryList<T extends { id: string }>({ entries, commit, title, addLabel,
           {renderFields(e, (p) => commit(replaceAt(entries, i, { ...e, ...p })))}
         </EntryShell>
       ))}
+      {entries.length === 0 && <EmptyHint>{emptyHint}</EmptyHint>}
       <Button type="button" variant="secondary" size="sm" className="self-start"
         onClick={() => commit([...entries, makeEntry()])}>
         <Plus className="h-3.5 w-3.5" aria-hidden /> {addLabel}
@@ -43,7 +45,7 @@ function EntryList<T extends { id: string }>({ entries, commit, title, addLabel,
 export function ProjectsForm({ content, onChange }: ContentFormProps) {
   return (
     <EntryList entries={content.projects} commit={(projects) => onChange({ projects })}
-      addLabel="Add project" title={(e) => e.name || "New project"}
+      addLabel="Add project" emptyHint="No projects listed yet." title={(e) => e.name || "New project"}
       makeEntry={(): ProjectEntry => ({ id: newId(), name: "", bullets: [] })}
       renderFields={(e, patch) => (
         <>
@@ -64,7 +66,7 @@ export function ProjectsForm({ content, onChange }: ContentFormProps) {
 export function CertificationsForm({ content, onChange }: ContentFormProps) {
   return (
     <EntryList entries={content.certifications} commit={(certifications) => onChange({ certifications })}
-      addLabel="Add certification" title={(e) => e.name || "New certification"}
+      addLabel="Add certification" emptyHint="No certifications listed yet." title={(e) => e.name || "New certification"}
       makeEntry={(): CertEntry => ({ id: newId(), name: "" })}
       renderFields={(e, patch) => (
         <>
@@ -84,7 +86,7 @@ export function CertificationsForm({ content, onChange }: ContentFormProps) {
 export function LanguagesForm({ content, onChange }: ContentFormProps) {
   return (
     <EntryList entries={content.languages} commit={(languages) => onChange({ languages })}
-      addLabel="Add language" title={(e) => e.name || "New language"}
+      addLabel="Add language" emptyHint="No languages listed yet." title={(e) => e.name || "New language"}
       makeEntry={(): LanguageEntry => ({ id: newId(), name: "" })}
       renderFields={(e, patch) => (
         <div className="grid grid-cols-2 gap-3">
@@ -100,7 +102,7 @@ export function LanguagesForm({ content, onChange }: ContentFormProps) {
 export function AwardsForm({ content, onChange }: ContentFormProps) {
   return (
     <EntryList entries={content.awards} commit={(awards) => onChange({ awards })}
-      addLabel="Add award" title={(e) => e.name || "New award"}
+      addLabel="Add award" emptyHint="No awards listed yet." title={(e) => e.name || "New award"}
       makeEntry={(): AwardEntry => ({ id: newId(), name: "" })}
       renderFields={(e, patch) => (
         <>
@@ -120,7 +122,7 @@ export function AwardsForm({ content, onChange }: ContentFormProps) {
 export function VolunteerForm({ content, onChange }: ContentFormProps) {
   return (
     <EntryList entries={content.volunteer} commit={(volunteer) => onChange({ volunteer })}
-      addLabel="Add volunteer role" title={(e) => e.role || "New volunteer role"}
+      addLabel="Add volunteer role" emptyHint="No volunteer roles listed yet." title={(e) => e.role || "New volunteer role"}
       makeEntry={(): VolunteerEntry => ({ id: newId(), role: "", org: "" })}
       renderFields={(e, patch) => (
         <>
@@ -155,7 +157,7 @@ export function InterestsForm({ content, onChange }: ContentFormProps) {
 export function ReferencesForm({ content, onChange }: ContentFormProps) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex items-center gap-2 text-sm font-medium">
+      <label className="flex items-center gap-2 text-base font-medium">
         <input type="checkbox" checked={content.referencesOnRequest}
           onChange={(e) => onChange({ referencesOnRequest: e.target.checked })}
           className="h-4 w-4 rounded border-line" />
@@ -163,7 +165,7 @@ export function ReferencesForm({ content, onChange }: ContentFormProps) {
       </label>
       {!content.referencesOnRequest && (
         <EntryList entries={content.references} commit={(references) => onChange({ references })}
-          addLabel="Add reference" title={(e) => e.name || "New reference"}
+          addLabel="Add reference" emptyHint="No named references yet." title={(e) => e.name || "New reference"}
           makeEntry={(): ReferenceEntry => ({ id: newId(), name: "" })}
           renderFields={(e, patch) => (
             <>

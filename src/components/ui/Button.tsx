@@ -10,8 +10,8 @@ const styles: Record<Variant, string> = {
   danger: "bg-danger-bg text-danger hover:opacity-85",
 };
 const sizes: Record<Size, string> = {
-  md: "text-sm font-semibold px-5 h-10",
-  sm: "text-xs font-semibold px-3.5 h-8",
+  md: "text-base font-semibold px-5 h-10",
+  sm: "text-sm font-semibold px-3.5 h-8",
 };
 
 export const Button = forwardRef<HTMLButtonElement,

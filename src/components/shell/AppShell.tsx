@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <main id="main" className="min-w-0 flex-1 pb-16 md:pb-0">
         {persistBroken && (
-          <p role="alert" className="border-b border-warn-line bg-warn-bg px-6 py-2 text-xs font-medium text-warn">
+          <p role="alert" className="border-b border-warn-line bg-warn-bg px-6 py-2 text-sm font-medium text-warn">
             Storage is unavailable in this browser — changes won’t survive a reload.
           </p>
         )}

@@ -15,9 +15,9 @@ import { toast } from "@/components/ui/Toast";
 import { isDirty, changedFields } from "@/lib/draft";
 import { relativeDays, shortDate } from "@/lib/format";
 
-const input = "w-full rounded-xl border border-line px-3 py-2 text-sm placeholder:text-ink-3";
-const label = "mb-1 block text-[11px] font-semibold text-ink-2";
-const sectionTitle = "mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-3";
+const input = "w-full rounded-xl border border-line px-3 py-2 text-base placeholder:text-ink-3";
+const label = "mb-1 block text-xs font-semibold text-ink-2";
+const sectionTitle = "mb-2 text-xs font-bold uppercase tracking-wider text-ink-3";
 
 /** The fields that buffer. Everything else in the panel (stage, list
  *  add/remove, delete) commits immediately — see the editing contract spec. */
@@ -107,7 +107,7 @@ function PanelBody({ app }: { app: Application }) {
         <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-line-2 bg-surface px-6 py-4">
           <div className="min-w-0">
             <h2 className="truncate text-lg font-extrabold tracking-tight">{app.role}</h2>
-            <p className="text-xs text-ink-3">
+            <p className="text-sm text-ink-3">
               {app.company}
               {hasLink && (
                 <a href={app.url} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center gap-0.5 font-semibold text-ink-2 underline">
@@ -119,7 +119,7 @@ function PanelBody({ app }: { app: Application }) {
           <div className="flex shrink-0 items-center gap-1.5">
             <label htmlFor="detail-stage" className="sr-only">Stage</label>
             <Select id="detail-stage" value={app.stageId} wrapperClassName="inline-flex"
-              className="rounded-full border border-line bg-surface py-1.5 pl-3.5 text-xs font-semibold"
+              className="rounded-full border border-line bg-surface py-1.5 pl-3.5 text-sm font-semibold"
               onChange={(e) => void s.moveApplication(app.id, e.target.value, 0)}>
               {s.stages.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
             </Select>
@@ -176,12 +176,15 @@ function PanelBody({ app }: { app: Application }) {
                 return (
                   <button key={t.id} type="button" aria-pressed={on}
                     onClick={() => set({ tagIds: on ? draft.tagIds.filter((x) => x !== t.id) : [...draft.tagIds, t.id] })}
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${
                       on ? "border-ink bg-ink text-white" : "border-line bg-surface text-ink-2 hover:bg-sunken"}`}>
                     {t.name}
                   </button>
                 );
               })}
+              {s.tags.length === 0 && (
+                <p className="text-sm text-ink-3">No tags yet — add some in Settings to group applications.</p>
+              )}
             </div>
           </section>
 
@@ -189,14 +192,14 @@ function PanelBody({ app }: { app: Application }) {
             <h3 className={sectionTitle}>Interviews</h3>
             <ul className="mb-3 flex flex-col gap-2">
               {interviews.map((iv) => (
-                <li key={iv.id} className="flex items-center justify-between rounded-xl border border-line-2 px-3 py-2 text-sm">
+                <li key={iv.id} className="flex items-center justify-between rounded-xl border border-line-2 px-3 py-2 text-base">
                   <span><span className="font-semibold capitalize">{iv.roundType}</span>
                     <span className="text-ink-3"> · {shortDate(iv.scheduledAt)}{iv.locationOrLink ? ` · ${iv.locationOrLink}` : ""}</span></span>
                   <button type="button" aria-label="Remove interview" onClick={() => void s.removeInterview(iv.id)}
                     className="rounded-full p-1.5 text-ink-3 hover:bg-sunken"><X className="h-3.5 w-3.5" aria-hidden /></button>
                 </li>
               ))}
-              {interviews.length === 0 && <li className="text-xs text-ink-3">No interviews scheduled yet.</li>}
+              {interviews.length === 0 && <li className="text-sm text-ink-3">No interviews scheduled yet.</li>}
             </ul>
             <AddRow label="Add interview" onSubmit={() => {
               if (!ivDraft.scheduledAt) return;
@@ -221,13 +224,14 @@ function PanelBody({ app }: { app: Application }) {
             <h3 className={sectionTitle}>Contacts</h3>
             <ul className="mb-3 flex flex-col gap-2">
               {contacts.map((c) => (
-                <li key={c.id} className="flex items-center justify-between rounded-xl border border-line-2 px-3 py-2 text-sm">
+                <li key={c.id} className="flex items-center justify-between rounded-xl border border-line-2 px-3 py-2 text-base">
                   <span><span className="font-semibold">{c.name}</span>
                     <span className="text-ink-3"> {c.role && `· ${c.role}`} {c.email && `· ${c.email}`}</span></span>
                   <button type="button" aria-label={`Remove contact ${c.name}`} onClick={() => void s.removeContact(c.id)}
                     className="rounded-full p-1.5 text-ink-3 hover:bg-sunken"><X className="h-3.5 w-3.5" aria-hidden /></button>
                 </li>
               ))}
+              {contacts.length === 0 && <li className="text-sm text-ink-3">No contacts yet.</li>}
             </ul>
             <AddRow label="Add contact" onSubmit={() => {
               if (!contactDraft.name.trim()) return;
@@ -248,13 +252,13 @@ function PanelBody({ app }: { app: Application }) {
             <h3 className={sectionTitle}>Reminders</h3>
             <ul className="mb-3 flex flex-col gap-2">
               {reminders.map((r) => (
-                <li key={r.id} className="flex items-center gap-2 rounded-xl border border-line-2 px-3 py-2 text-sm">
+                <li key={r.id} className="flex items-center gap-2 rounded-xl border border-line-2 px-3 py-2 text-base">
                   <BellRing className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
                   <span className="min-w-0 flex-1 truncate"><span className="font-semibold">{r.title}</span>
                     <span className="text-ink-3"> · due {shortDate(r.dueAt)}</span></span>
                 </li>
               ))}
-              {reminders.length === 0 && <li className="text-xs text-ink-3">No reminders yet.</li>}
+              {reminders.length === 0 && <li className="text-sm text-ink-3">No reminders yet.</li>}
             </ul>
             <AddRow label="Add reminder" onSubmit={() => {
               if (!reminderDraft.title.trim() || !reminderDraft.dueAt) return;
@@ -277,7 +281,7 @@ function PanelBody({ app }: { app: Application }) {
             <h3 className={sectionTitle}>Documents</h3>
             <ul className="mb-3 flex flex-col gap-2">
               {linkedDocs.map((cv) => (
-                <li key={cv.id} className="flex items-center justify-between gap-2 rounded-xl border border-line-2 px-3 py-2 text-sm">
+                <li key={cv.id} className="flex items-center justify-between gap-2 rounded-xl border border-line-2 px-3 py-2 text-base">
                   <span className="flex min-w-0 items-center gap-2">
                     <FileText className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
                     <span className="min-w-0 truncate"><span className="font-semibold">{cv.name}</span>
@@ -285,13 +289,13 @@ function PanelBody({ app }: { app: Application }) {
                   </span>
                   <span className="flex shrink-0 items-center gap-1">
                     <Link href={`/cv/${cv.id}`}
-                      className="rounded-full px-2 py-1 text-xs font-semibold text-ink-2 hover:bg-sunken">Open</Link>
+                      className="rounded-full px-2 py-1 text-sm font-semibold text-ink-2 hover:bg-sunken">Open</Link>
                     <button type="button" aria-label={`Unlink ${cv.name}`} onClick={() => void s.updateCv(cv.id, { applicationId: undefined })}
                       className="rounded-full p-1.5 text-ink-3 hover:bg-sunken"><X className="h-3.5 w-3.5" aria-hidden /></button>
                   </span>
                 </li>
               ))}
-              {linkedDocs.length === 0 && <li className="text-xs text-ink-3">No documents linked yet.</li>}
+              {linkedDocs.length === 0 && <li className="text-sm text-ink-3">No documents linked yet.</li>}
             </ul>
             {unlinkedDocs.length > 0 && (
               <>
@@ -320,22 +324,25 @@ function PanelBody({ app }: { app: Application }) {
             </div>
             <ul className="flex flex-col gap-2">
               {notes.map((n) => (
-                <li key={n.id} className="rounded-xl bg-sunken px-3 py-2.5 text-sm">
+                <li key={n.id} className="rounded-xl bg-sunken px-3 py-2.5 text-base">
                   <p className="whitespace-pre-wrap">{n.body}</p>
-                  <span className="mt-1 flex items-center justify-between text-[10px] text-ink-3">
+                  <span className="mt-1 flex items-center justify-between text-xs text-ink-3">
                     {relativeDays(n.createdAt, nowIso)}
                     <button type="button" onClick={() => void s.removeNote(n.id)} className="font-semibold hover:text-danger">Delete</button>
                   </span>
                 </li>
               ))}
+              {notes.length === 0 && (
+                <li className="text-sm text-ink-3">No notes yet — jot down questions or impressions above.</li>
+              )}
             </ul>
           </section>
 
           {app.jdSnapshot && (
             <section aria-label="Job description snapshot">
               <details className="rounded-xl border border-line-2 px-4 py-3">
-                <summary className="cursor-pointer text-xs font-bold text-ink-2">Job description snapshot</summary>
-                <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-ink-2">{app.jdSnapshot}</p>
+                <summary className="cursor-pointer text-sm font-bold text-ink-2">Job description snapshot</summary>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink-2">{app.jdSnapshot}</p>
               </details>
             </section>
           )}
@@ -346,10 +353,11 @@ function PanelBody({ app }: { app: Application }) {
               {events.map((ev) => (
                 <li key={ev.id} className="relative border-l-2 border-line-2 pb-3 pl-4 last:pb-0">
                   <span className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-ink" aria-hidden />
-                  <p className="text-xs font-medium">{ev.message}</p>
-                  <p className="text-[10px] text-ink-3">{relativeDays(ev.at, nowIso)}</p>
+                  <p className="text-sm font-medium">{ev.message}</p>
+                  <p className="text-xs text-ink-3">{relativeDays(ev.at, nowIso)}</p>
                 </li>
               ))}
+              {events.length === 0 && <li className="text-sm text-ink-3">No activity recorded yet.</li>}
             </ol>
           </section>
         </div>
@@ -364,7 +372,7 @@ function PanelBody({ app }: { app: Application }) {
         {confirmDiscard && (
           <div role="alertdialog" aria-modal="true" aria-label="Discard unsaved changes"
             className="sticky bottom-0 z-20 border-t border-line-2 bg-surface px-6 py-4">
-            <p className="mb-3 text-sm font-medium">Discard unsaved changes?</p>
+            <p className="mb-3 text-base font-medium">Discard unsaved changes?</p>
             <div className="flex justify-end gap-2">
               {/* Focus rests on the non-destructive choice, so a reflexive
                   second Escape or Enter cannot destroy the draft. */}
@@ -381,7 +389,7 @@ function PanelBody({ app }: { app: Application }) {
 
         {confirmDelete && (
           <div className="sticky bottom-0 z-20 border-t border-line-2 bg-surface px-6 py-4">
-            <p className="mb-3 text-sm font-medium">Delete this application and all its notes, contacts, and interviews?</p>
+            <p className="mb-3 text-base font-medium">Delete this application and all its notes, contacts, and interviews?</p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
               <Button variant="danger" size="sm"

@@ -14,12 +14,12 @@ import { SaveFooter } from "@/components/ui/SaveFooter";
 import { SortableList } from "@/components/ui/SortableList";
 import { toast } from "@/components/ui/Toast";
 
-const input = "rounded-xl border border-line px-3 py-2 text-sm";
+const input = "rounded-xl border border-line px-3 py-2 text-base";
 const card = "rounded-2xl border border-line-2 bg-surface p-5";
 /** Footers span the full card width and sit flush with its rounded bottom. */
 const cardFooter = "-mx-5 -mb-5 mt-4 rounded-b-2xl";
-const h2 = "mb-1 text-sm font-bold";
-const sub = "mb-4 text-xs text-ink-3";
+const h2 = "mb-1 text-base font-bold";
+const sub = "mb-4 text-sm text-ink-3";
 
 /** List rows reserve space for a grip, a colour dot and a delete button, so an
  *  add-field placed in a bare row would not share their left and right edges.
@@ -167,7 +167,7 @@ export function SettingsPage() {
         {confirmStage && (
           <div role="alertdialog" aria-modal="true" aria-label="Delete column"
             className="mb-3 rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
-            <p className="mb-3 text-xs font-medium">
+            <p className="mb-3 text-sm font-medium">
               Delete the “{sorted.find((st) => st.id === confirmStage)?.name}” column? Any cards move to the column on its left.
             </p>
             <div className="flex justify-end gap-2">
@@ -215,12 +215,17 @@ export function SettingsPage() {
               </Button>
             </li>
           ))}
+          {s.tags.length === 0 && (
+            <li className="rounded-xl border border-dashed border-line px-3 py-4 text-center text-sm text-ink-3">
+              No tags yet — add your first one below.
+            </li>
+          )}
         </ul>
 
         {confirmTag && (
           <div role="alertdialog" aria-modal="true" aria-label="Delete tag"
             className="mb-3 rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
-            <p className="mb-3 text-xs font-medium">
+            <p className="mb-3 text-sm font-medium">
               Delete the “{s.tags.find((t) => t.id === confirmTag)?.name}” tag? It is removed from every application.
             </p>
             <div className="flex justify-end gap-2">
@@ -253,7 +258,7 @@ export function SettingsPage() {
         <p className={sub}>Tune how JobTrackr nudges you.</p>
         <div className="flex flex-wrap gap-4">
           <div>
-            <label htmlFor="nudge-days" className="mb-1 block text-xs font-semibold text-ink-2">
+            <label htmlFor="nudge-days" className="mb-1 block text-sm font-semibold text-ink-2">
               Follow-up nudge after (days)
             </label>
             <input id="nudge-days" type="number" min={1} max={60} value={prefDraft.nudgeDays}
@@ -261,7 +266,7 @@ export function SettingsPage() {
               className={`${input} w-28`} />
           </div>
           <div>
-            <label htmlFor="ghost-days" className="mb-1 block text-xs font-semibold text-ink-2">
+            <label htmlFor="ghost-days" className="mb-1 block text-sm font-semibold text-ink-2">
               Ghosted after (days)
             </label>
             <input id="ghost-days" type="number" min={1} max={90} value={prefDraft.ghostDays}
@@ -269,7 +274,7 @@ export function SettingsPage() {
               className={`${input} w-28`} />
           </div>
           <div>
-            <label htmlFor="currency" className="mb-1 block text-xs font-semibold text-ink-2">Default currency</label>
+            <label htmlFor="currency" className="mb-1 block text-sm font-semibold text-ink-2">Default currency</label>
             <input id="currency" value={prefDraft.currency}
               onChange={(e) => setPrefEdits({ ...prefEdits, currency: e.target.value.toUpperCase() })}
               className={`${input} w-28`} />
@@ -301,8 +306,8 @@ export function SettingsPage() {
           </Button>
         </div>
         <fieldset className="mb-4">
-          <legend className="mb-1.5 text-xs font-semibold text-ink-2">Import JSON</legend>
-          <div className="mb-2 flex gap-3 text-xs">
+          <legend className="mb-1.5 text-sm font-semibold text-ink-2">Import JSON</legend>
+          <div className="mb-2 flex gap-3 text-sm">
             {(["merge", "replace"] as const).map((m) => (
               <label key={m} className="flex items-center gap-1.5">
                 <input type="radio" name="import-mode" value={m} checked={importMode === m}
@@ -314,11 +319,11 @@ export function SettingsPage() {
           <label htmlFor="import-file" className="sr-only">Choose JSON file</label>
           <input id="import-file" ref={fileRef} type="file" accept="application/json"
             onChange={(e) => e.target.files?.[0] && void onImportFile(e.target.files[0])}
-            className="text-xs" />
+            className="text-sm" />
         </fieldset>
         <div className="rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
-          <p className="mb-2 text-xs font-bold text-danger">Danger zone</p>
-          <p className="mb-2 text-xs text-ink-2">Type <strong>DELETE</strong> to enable the button. This wipes every application, note, and reminder.</p>
+          <p className="mb-2 text-sm font-bold text-danger">Danger zone</p>
+          <p className="mb-2 text-sm text-ink-2">Type <strong>DELETE</strong> to enable the button. This wipes every application, note, and reminder.</p>
           <div className="flex gap-2">
             <label htmlFor="confirm-delete" className="sr-only">Type DELETE to confirm</label>
             <input id="confirm-delete" value={confirmText} onChange={(e) => setConfirmText(e.target.value)}

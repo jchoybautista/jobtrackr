@@ -29,6 +29,21 @@ it("shows pass-rate cards and the outcomes strip", () => {
   expect(screen.getByText("Technical pass rate")).toBeTruthy();
   expect(screen.getByText("Ghosted")).toBeTruthy();
   expect(screen.getByText("Rejected")).toBeTruthy();
-  // "Screening" also labels a funnel row, so the outcomes-strip stat isn't unique text.
-  expect(screen.getAllByText("Screening").length).toBeGreaterThan(0);
+});
+
+it("gives every card an empty state when there is no data", () => {
+  useApp.setState({ applications: [], interviews: [], reminders: [] });
+  render(<DashboardPage />);
+  expect(screen.getByText("Nothing in the pipeline")).toBeTruthy();
+  expect(screen.getByText("No applications logged yet")).toBeTruthy();
+  expect(screen.getByText("No salary figures yet")).toBeTruthy();
+  expect(screen.getByText("Nothing scheduled")).toBeTruthy();
+  expect(screen.getByText("Nothing to chase yet")).toBeTruthy();
+});
+
+it("words the attention card differently once applications exist", () => {
+  // These demo apps are past the nudge window, so the card has rows rather than
+  // an empty state — the first-run copy must not be what a stocked board shows.
+  render(<DashboardPage />);
+  expect(screen.queryByText("Nothing to chase yet")).toBeNull();
 });
