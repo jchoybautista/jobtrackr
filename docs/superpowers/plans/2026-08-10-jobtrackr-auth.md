@@ -1175,27 +1175,52 @@ import Dexie from "dexie";
 import { createDb, openDb, LEGACY_DB_NAME } from "@/lib/db";
 import { adoptLegacyDatabase } from "@/lib/legacy";
 
+const CLAIM_KEY = "jobtrackr:legacy-claimed-by";
+
+/** Seeds every table the migration is supposed to carry, so a copy list that
+ *  silently drops tables cannot pass. */
 async function seedLegacy() {
   const legacy = createDb(LEGACY_DB_NAME);
-  await legacy.tags.put({ id: "t1", name: "From the old database", preset: false });
+  await legacy.stages.put({ id: "s1", name: "Saved", color: "lavender", order: 0, kind: "pipeline" });
   await legacy.applications.put({
-    id: "a1", company: "Acme", role: "Dev", tagIds: [], stageId: "stage-saved", order: 0,
+    id: "a1", company: "Acme", role: "Dev", tagIds: [], stageId: "s1", order: 0,
     createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z",
   });
+  await legacy.tags.put({ id: "t1", name: "From the old database", preset: false });
+  await legacy.interviews.put({ id: "i1", applicationId: "a1", roundType: "phone", scheduledAt: "2026-02-01T00:00:00.000Z" });
+  await legacy.contacts.put({ id: "c1", applicationId: "a1", name: "Sam" });
+  await legacy.events.put({ id: "e1", applicationId: "a1", kind: "created", message: "Application created", at: "2026-01-01T00:00:00.000Z" });
+  await legacy.notes.put({ id: "n1", applicationId: "a1", body: "Prep", createdAt: "2026-01-02T00:00:00.000Z", updatedAt: "2026-01-02T00:00:00.000Z" });
+  await legacy.reminders.put({ id: "r1", applicationId: "a1", type: "follow_up", title: "Chase", dueAt: "2026-02-02T00:00:00.000Z", done: false });
+  await legacy.settings.put({ id: "singleton", nudgeDays: 7, ghostDays: 14, currency: "USD", theme: "light", demo: false });
+  await legacy.profile.put({ id: "singleton", content: { fullName: "Old User", links: [], experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], awards: [], volunteer: [], references: [], referencesOnRequest: false }, updatedAt: "2026-01-01T00:00:00.000Z" });
+  await legacy.cvdocs.put({ id: "cv1", name: "Master", templateId: "classic", accent: "sky", showPhoto: false, content: { fullName: "Old User", links: [], experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], awards: [], volunteer: [], references: [], referencesOnRequest: false }, sections: [], createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" });
   legacy.close();
 }
 
 beforeEach(async () => {
   for (const name of await Dexie.getDatabaseNames()) await Dexie.delete(name);
+  localStorage.removeItem(CLAIM_KEY);
 });
 
 describe("adoptLegacyDatabase", () => {
-  it("copies the legacy data into an empty account database", async () => {
+  it("carries every table across, not just the first one", async () => {
     await seedLegacy();
     expect(await adoptLegacyDatabase("u1")).toBe("adopted");
 
     const mine = openDb({ kind: "user", userId: "u1" });
+    // Named individually: a copy list that quietly drops tables must fail here.
+    expect(await mine.stages.count()).toBe(1);
+    expect(await mine.applications.count()).toBe(1);
     expect(await mine.tags.count()).toBe(1);
+    expect(await mine.interviews.count()).toBe(1);
+    expect(await mine.contacts.count()).toBe(1);
+    expect(await mine.events.count()).toBe(1);
+    expect(await mine.notes.count()).toBe(1);
+    expect(await mine.reminders.count()).toBe(1);
+    expect(await mine.settings.count()).toBe(1);
+    expect(await mine.profile.count()).toBe(1);
+    expect(await mine.cvdocs.count()).toBe(1);
     expect((await mine.applications.get("a1"))?.company).toBe("Acme");
   });
 
@@ -1205,18 +1230,42 @@ describe("adoptLegacyDatabase", () => {
     expect(await Dexie.exists(LEGACY_DB_NAME)).toBe(true);
   });
 
-  it("records who claimed it", async () => {
+  it("does not upgrade the legacy database's schema", async () => {
+    // The pre-auth app opens `jobtrackr` at v3. Bumping it to v4 would break
+    // any rollback, and this code promises not to modify it.
+    await seedLegacy();
+    const before = await new Dexie(LEGACY_DB_NAME).open();
+    const version = before.verno;
+    before.close();
+
+    await adoptLegacyDatabase("u1");
+
+    const after = await new Dexie(LEGACY_DB_NAME).open();
+    expect(after.verno).toBe(version);
+    after.close();
+  });
+
+  it("records the claim where every account on the device can see it", async () => {
     await seedLegacy();
     await adoptLegacyDatabase("u1");
-    const legacy = createDb(LEGACY_DB_NAME);
-    expect((await legacy.meta.get("legacy"))?.claimedBy).toBe("u1");
+    expect(localStorage.getItem(CLAIM_KEY)).toBe("u1");
   });
 
   it("does nothing for a second account on the same device", async () => {
     await seedLegacy();
     await adoptLegacyDatabase("u1");
     expect(await adoptLegacyDatabase("u2")).toBe("skipped");
-    expect(await openDb({ kind: "user", userId: "u2" }).tags.count()).toBe(0);
+    expect(await openDb({ kind: "user", userId: "u2" }).applications.count()).toBe(0);
+  });
+
+  it("does not copy one person's job hunt into another's account when two sign in at once", async () => {
+    await seedLegacy();
+    const [a, b] = await Promise.all([adoptLegacyDatabase("u1"), adoptLegacyDatabase("u2")]);
+    expect([a, b].filter((r) => r === "adopted")).toHaveLength(1);
+
+    const u1 = await openDb({ kind: "user", userId: "u1" }).applications.count();
+    const u2 = await openDb({ kind: "user", userId: "u2" }).applications.count();
+    expect(u1 + u2).toBe(1);
   });
 
   it("never overwrites an account that already has data", async () => {
@@ -1229,8 +1278,24 @@ describe("adoptLegacyDatabase", () => {
     expect((await mine.tags.get("mine"))?.name).toBe("Already here");
   });
 
+  it("retries after a failed copy instead of stranding the data", async () => {
+    // A quota error mid-copy must roll the target back to empty so the next
+    // sign-in can try again — a half-copied account would look "not empty"
+    // and be skipped forever.
+    await seedLegacy();
+    localStorage.setItem(CLAIM_KEY, "u1");   // as if a previous attempt claimed then died
+
+    expect(await adoptLegacyDatabase("u1")).toBe("adopted");
+    expect(await openDb({ kind: "user", userId: "u1" }).applications.count()).toBe(1);
+  });
+
   it("does nothing when there is no legacy database", async () => {
     expect(await adoptLegacyDatabase("u1")).toBe("skipped");
+  });
+
+  it("does not create a legacy database for someone who never had one", async () => {
+    await adoptLegacyDatabase("u1");
+    expect(await Dexie.exists(LEGACY_DB_NAME)).toBe(false);
   });
 });
 ```
@@ -1246,12 +1311,31 @@ Create `src/lib/legacy.ts`:
 
 ```ts
 import Dexie from "dexie";
-import { createDb, openDb, LEGACY_DB_NAME, type JobTrackrDb } from "./db";
+import { openDb, LEGACY_DB_NAME, type JobTrackrDb } from "./db";
 
 const COPIED = [
   "stages", "applications", "tags", "interviews", "contacts",
   "events", "notes", "reminders", "settings", "profile", "cvdocs", "cvthumbs",
 ] as const;
+
+/**
+ * Which account claimed this device's pre-auth data.
+ *
+ * Deliberately localStorage rather than a row in the legacy database: the claim
+ * has to be readable by every account on the device, and writing to `jobtrackr`
+ * would mean opening it at schema v4 — upgrading a database this code promises
+ * never to modify, and stranding anyone whose app rolls back to a build that
+ * opens it at v3.
+ */
+const CLAIM_KEY = "jobtrackr:legacy-claimed-by";
+
+function readClaim(): string | null {
+  try { return localStorage.getItem(CLAIM_KEY); } catch { return null; }
+}
+
+function writeClaim(userId: string): void {
+  try { localStorage.setItem(CLAIM_KEY, userId); } catch { /* private mode: fall back to the empty-target guard */ }
+}
 
 async function isEmpty(db: JobTrackrDb): Promise<boolean> {
   const counts = await Promise.all(COPIED.map((t) => db.table(t).count()));
@@ -1260,31 +1344,52 @@ async function isEmpty(db: JobTrackrDb): Promise<boolean> {
 
 /**
  * Moves data from the pre-auth `jobtrackr` database into the first account to
- * sign in on this device.
+ * sign in on this device. Runs once, unattended, with no undo — so the order of
+ * operations is the whole design:
  *
- * Two guards, deliberately: the claim record, and the target being empty. The
- * claim can be lost if a user clears site data for that database alone, and a
- * populated account must survive that anyway.
+ * 1. Claim before copying. Two accounts signing in together must not both
+ *    receive a copy of the first person's job hunt.
+ * 2. Copy inside ONE transaction. Twelve independent bulkPuts would leave a
+ *    half-populated account after a quota error — and a half-populated account
+ *    is no longer empty, so the retry guard would skip it forever.
+ * 3. Re-claiming by the same account is allowed, so a crashed copy retries.
+ * 4. Read the legacy database without declaring a schema, so opening it cannot
+ *    upgrade it.
+ *
+ * The legacy database is never deleted or modified. A botched copy is always
+ * recoverable from disk.
  */
 export async function adoptLegacyDatabase(userId: string): Promise<"adopted" | "skipped"> {
   if (!(await Dexie.exists(LEGACY_DB_NAME))) return "skipped";
 
-  const legacy = createDb(LEGACY_DB_NAME);
+  const claim = readClaim();
+  if (claim && claim !== userId) return "skipped";
+
+  // No version declared: Dexie reads whatever schema is on disk, so a v3
+  // database stays v3.
+  const legacy = new Dexie(LEGACY_DB_NAME);
   try {
     await legacy.open();
-    if (await legacy.meta.get("legacy")) return "skipped";
-    if (await isEmpty(legacy)) return "skipped";
+    const present = new Set(legacy.tables.map((t) => t.name));
+    const tables = COPIED.filter((t) => present.has(t));
+
+    const rows = await Promise.all(tables.map((t) => legacy.table(t).toArray()));
+    if (rows.every((r) => r.length === 0)) return "skipped";
 
     const target = openDb({ kind: "user", userId });
     await target.open();
     if (!(await isEmpty(target))) return "skipped";
 
-    for (const name of COPIED) {
-      const rows = await legacy.table(name).toArray();
-      if (rows.length) await target.table(name).bulkPut(rows);
-    }
+    writeClaim(userId);
 
-    await legacy.meta.put({ id: "legacy", claimedBy: userId, claimedAt: new Date().toISOString() });
+    // One transaction: a failure rolls the target back to empty, so the next
+    // sign-in by this same account retries cleanly.
+    await target.transaction("rw", tables.map((t) => target.table(t)), async () => {
+      for (let i = 0; i < tables.length; i++) {
+        if (rows[i].length) await target.table(tables[i]).bulkPut(rows[i]);
+      }
+    });
+
     return "adopted";
   } finally {
     legacy.close();
