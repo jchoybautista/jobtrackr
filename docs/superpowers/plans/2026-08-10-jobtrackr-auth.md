@@ -671,6 +671,27 @@ describe("authErrorMessage", () => {
       .toMatch(/8 characters/);
   });
 
+  it("tells a returning user to sign in instead, in both Supabase phrasings", () => {
+    // Reachable from the public sign-up form. Pinned because four later tasks
+    // assert against this exact copy.
+    for (const raw of [
+      "User already registered",
+      "A user with this email address has already been registered",
+    ]) {
+      expect(authErrorMessage(raw)).toMatch(/already registered/i);
+    }
+  });
+
+  it("recognises every phrasing Supabase uses for a dead link", () => {
+    for (const raw of [
+      "Token has expired",
+      "Email link is invalid or has expired",
+      "Invalid token",
+    ]) {
+      expect(authErrorMessage(raw)).toMatch(/expired/i);
+    }
+  });
+
   it("falls back to something actionable, never a raw code", () => {
     const msg = authErrorMessage("AuthApiError: unexpected_failure");
     expect(msg).toMatch(/try again/i);
@@ -708,9 +729,12 @@ const RULES: { match: RegExp; message: string }[] = [
     message: "Too many attempts. Wait a minute or two, then try again." },
   { match: /password should be at least/i,
     message: "Password must be at least 8 characters." },
-  { match: /user already registered/i,
+  { match: /user already registered|already been registered/i,
     message: "That email is already registered. Try signing in instead." },
-  { match: /token has expired|invalid.*token/i,
+  // Supabase phrases expired links several ways ("Token has expired", "Email
+  // link is invalid or has expired"); all of them must reach the same copy, or
+  // the reset flow tells people "something went wrong" for its commonest failure.
+  { match: /token has expired|invalid.*token|link is invalid|link has expired/i,
     message: "That link has expired. Request a new one." },
 ];
 
