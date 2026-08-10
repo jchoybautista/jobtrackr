@@ -18,9 +18,9 @@ const COPIED = [
 const CLAIM_KEY = "jobtrackr:legacy-claimed-by";
 
 /** Backs the claim when localStorage is unavailable (private mode, blocked
- *  storage). Only covers this page session, but that is where concurrent
- *  sign-ins actually happen — without it, a throwing localStorage silently
- *  removes the guard and every account adopts the same data. */
+ *  storage). Module state, so it only covers races within one tab — two tabs
+ *  are two module instances and would both adopt. Partial cover beats none:
+ *  without it, a throwing localStorage removes the guard entirely. */
 let memoryClaim: string | null = null;
 
 function readClaim(): string | null {
