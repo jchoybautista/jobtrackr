@@ -1,5 +1,15 @@
 import { test, expect } from "@playwright/test";
 
+// The app is gated now. These specs exercise the tracker, not auth, so they
+// enter through the demo door rather than provisioning an account per run.
+test.beforeEach(async ({ context, baseURL }) => {
+  await context.addCookies([{
+    name: "jobtrackr-demo",
+    value: "1",
+    url: baseURL ?? "http://localhost:3100",
+  }]);
+});
+
 test("core flow: add job, see it on board and dashboard", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Board", exact: true })).toBeVisible();
