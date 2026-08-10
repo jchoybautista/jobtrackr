@@ -8,8 +8,7 @@ export interface SupabaseEnv {
   anonKey: string;
 }
 
-function required(name: string): string {
-  const value = process.env[name];
+function required(name: string, value: string | undefined): string {
   if (!value || value.trim() === "") {
     throw new Error(
       `${name} is not set. JobTrackr needs a Supabase project to run: copy ` +
@@ -21,8 +20,12 @@ function required(name: string): string {
 }
 
 export function supabaseEnv(): SupabaseEnv {
+  // Static dot access, deliberately: Next inlines NEXT_PUBLIC_* into the client
+  // bundle only when it can see the property statically. Reading via
+  // process.env[name] leaves the browser with an empty object and every
+  // client-side Supabase call throwing "not set".
   return {
-    url: required("NEXT_PUBLIC_SUPABASE_URL"),
-    anonKey: required("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    url: required("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL),
+    anonKey: required("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
   };
 }
