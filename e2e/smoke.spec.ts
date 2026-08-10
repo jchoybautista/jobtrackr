@@ -1,5 +1,15 @@
 import { test, expect } from "@playwright/test";
 
+// The app is gated now. These specs exercise the tracker, not auth, so they
+// enter through the demo door rather than provisioning an account per run.
+test.beforeEach(async ({ context, baseURL }) => {
+  await context.addCookies([{
+    name: "jobtrackr-demo",
+    value: "1",
+    url: baseURL ?? "http://localhost:3100",
+  }]);
+});
+
 test("core flow: add job, see it on board and dashboard", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Board", exact: true })).toBeVisible();
@@ -45,10 +55,12 @@ test("cv builder: profile → new cv → pdf download", async ({ page }) => {
   await page.getByRole("button", { name: "New CV" }).first().click();
 
   // New-CV dialog: name it, pick Classic (button's accessible name starts with
-  // the template name), create.
-  await page.getByLabel("CV name").fill("Smoke CV");
-  await page.getByRole("button", { name: /^Classic/ }).click();
-  await page.getByRole("button", { name: "Create CV" }).click();
+  // the template name), create. Scoped to the dialog — every card in the
+  // library exposes a "CV name" rename input too.
+  const newCvDialog = page.getByRole("dialog");
+  await newCvDialog.getByLabel("CV name").fill("Smoke CV");
+  await newCvDialog.getByRole("button", { name: /^Classic/ }).click();
+  await newCvDialog.getByRole("button", { name: "Create CV" }).click();
 
   // Lands on the per-CV editor with a live react-pdf preview iframe.
   await expect(page).toHaveURL(/\/cv\/[^/]+$/);

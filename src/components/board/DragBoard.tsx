@@ -7,16 +7,34 @@ import {
   useSensor, useSensors,
   type CollisionDetection, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import {
+  sortableKeyboardCoordinates,
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 /** Resolve drops by where the pointer actually is, falling back to corner
  *  distance only for keyboard dragging (which has no pointer). A dragged card
  *  is ~230px wide, so its corners straddle two columns near a boundary and
  *  `closestCorners` alone would drop it in the wrong column — or snap it back
- *  to its source — even while the cursor is clearly inside the target. */
+ *  to its source — even while the cursor is clearly inside the target.
+ *
+ *  Columns and cards share this one DndContext but live in separate id
+ *  namespaces (`col:<stageId>` vs plain application/stage ids). Without
+ *  scoping, a dragged column's pointer lands over the innermost droppable —
+ *  a card or the card-list div — which never matches the `col:` prefix, so
+ *  onDragEnd's column branch would silently no-op everywhere but the thin
+ *  header strip. Scope candidate containers to the active item's namespace
+ *  so column drags only ever resolve against other columns, and card drags
+ *  only ever resolve against cards/stage droppables, exactly as before. */
 const collisionDetection: CollisionDetection = (args) => {
-  const byPointer = pointerWithin(args);
-  return byPointer.length > 0 ? byPointer : closestCorners(args);
+  const isColumn = String(args.active.id).startsWith("col:");
+  const containers = args.droppableContainers.filter((c) =>
+    isColumn ? String(c.id).startsWith("col:") : !String(c.id).startsWith("col:"),
+  );
+  const scoped = { ...args, droppableContainers: containers };
+  const byPointer = pointerWithin(scoped);
+  return byPointer.length > 0 ? byPointer : closestCorners(scoped);
 };
 import { useApp } from "@/lib/store";
 import { columnTints } from "@/lib/palette";
@@ -46,6 +64,17 @@ export function DragBoard({ children }: { children: React.ReactNode }) {
     setActiveId(null);
     const { active, over } = e;
     if (!over) return;
+
+    if (String(active.id).startsWith("col:")) {
+      const fromId = String(active.id).slice(4);
+      const overId = String(over.id).startsWith("col:") ? String(over.id).slice(4) : null;
+      if (!overId || overId === fromId) return;
+      const sorted = [...s.stages].sort((a, b) => a.order - b.order);
+      const toIndex = sorted.findIndex((st) => st.id === overId);
+      await s.moveStage(fromId, toIndex);
+      return;
+    }
+
     const overId = String(over.id);
     const activeApp = s.applications.find((a) => a.id === active.id);
     if (!activeApp) return;
@@ -86,7 +115,12 @@ export function DragBoard({ children }: { children: React.ReactNode }) {
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      {children}
+      <SortableContext
+        items={s.stages.map((st) => `col:${st.id}`)}
+        strategy={horizontalListSortingStrategy}
+      >
+        {children}
+      </SortableContext>
       <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.2, 0.9, 0.3, 1.15)" }}>
         {activeApp && activeStage && (
           <div className="rotate-3 scale-[1.04] shadow-2xl motion-reduce:rotate-0 motion-reduce:scale-100">

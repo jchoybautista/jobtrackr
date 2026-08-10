@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { newId } from "@/lib/id";
 import type { EducationEntry } from "@/cv/types";
-import { Area, EntryShell, Field, replaceAt, removeAt, moveItem, type ContentFormProps } from "../form-kit";
+import { Area, EmptyHint, EntryShell, Field, replaceAt, removeAt, moveItem, type ContentFormProps } from "../form-kit";
 
 export function EducationForm({ content, onChange }: ContentFormProps) {
   const entries = content.education;
@@ -36,6 +36,7 @@ export function EducationForm({ content, onChange }: ContentFormProps) {
             onCommit={(v) => patch(i, { notes: v })} placeholder="Honors, thesis, relevant coursework…" />
         </EntryShell>
       ))}
+      {entries.length === 0 && <EmptyHint>No schools yet.</EmptyHint>}
       <Button type="button" variant="secondary" size="sm" className="self-start"
         onClick={() => onChange({ education: [...entries, { id: newId(), school: "" }] })}>
         <Plus className="h-3.5 w-3.5" aria-hidden /> Add education

@@ -34,3 +34,22 @@ export function reorderStages(stages: Stage[], stageId: string, toIndex: number)
   const next = [...rest.slice(0, idx), moving, ...rest.slice(idx)];
   return next.map((s, i) => ({ ...s, order: i }));
 }
+
+export function reorderStagesPinned(stages: Stage[], stageId: string, toIndex: number): Stage[] {
+  const moving = stages.find((s) => s.id === stageId);
+  if (!moving || moving.pinned) return stages;
+  const sorted = [...stages].sort((a, b) => a.order - b.order);
+  const lo = sorted[0]?.pinned ? 1 : 0;
+  const hi = sorted[sorted.length - 1]?.pinned ? sorted.length - 2 : sorted.length - 1;
+  const clamped = Math.max(lo, Math.min(toIndex, hi));
+  return reorderStages(stages, stageId, clamped);
+}
+
+export function reassignStageCards(
+  apps: Application[], fromStageId: string, toStageId: string,
+): Application[] {
+  const base = apps.filter((a) => a.stageId === toStageId).length;
+  let n = 0;
+  return apps.map((a) =>
+    a.stageId === fromStageId ? { ...a, stageId: toStageId, order: base + n++ } : a);
+}

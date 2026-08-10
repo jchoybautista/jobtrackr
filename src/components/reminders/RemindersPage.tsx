@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { AlarmClock, CalendarClock, BellRing, Check } from "lucide-react";
+import { AlarmClock, CalendarClock, BellRing, Check, CircleCheck } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { computeNudges, dueReminders } from "@/lib/selectors";
 import { relativeDays } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { Application, Reminder } from "@/lib/types";
 
 const DAY = 86_400_000;
@@ -26,8 +27,8 @@ function Row({ r, due }: { r: Reminder; due: boolean }) {
       due ? "border-warn-line bg-warn-bg" : "border-line-2 bg-surface"}`}>
       {typeIcon[r.type]}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{r.title}</p>
-        <p className="text-xs text-ink-3">
+        <p className="truncate text-base font-semibold">{r.title}</p>
+        <p className="text-sm text-ink-3">
           {due ? `was due ${relativeDays(r.dueAt, nowIso)}` : `due ${relativeDays(r.snoozedUntil ?? r.dueAt, nowIso)}`}
           {app && (
             <button type="button" className="ml-2 font-semibold text-ink-2 underline"
@@ -61,8 +62,8 @@ function NudgeRow({ app, days }: { app: Application; days: number }) {
     <li className="flex flex-wrap items-center gap-3 rounded-2xl border border-warn-line bg-warn-bg p-4">
       <AlarmClock className="h-4 w-4 text-warn" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">Follow up with {app.company} · {app.role}</p>
-        <p className="text-xs text-ink-3">
+        <p className="truncate text-base font-semibold">Follow up with {app.company} · {app.role}</p>
+        <p className="text-sm text-ink-3">
           {days} days silent
           <button type="button" className="ml-2 font-semibold text-ink-2 underline"
             onClick={() => { s.selectApp(app.id); router.push("/"); }}>
@@ -88,31 +89,39 @@ export function RemindersPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pt-6 lg:px-7">
       <h1 className="text-2xl font-extrabold tracking-tight">Reminders</h1>
-      <p className="mb-6 text-xs text-ink-3">Follow-ups and interviews, so nothing slips</p>
+      <p className="mb-6 text-sm text-ink-3">Follow-ups and interviews, so nothing slips</p>
 
-      <h2 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-3">Due now</h2>
-      <ul className="mb-6 flex flex-col gap-2">
-        {[...nudges.entries()].map(([appId, days]) => {
-          const app = appById.get(appId);
-          return app ? <NudgeRow key={`nudge-${appId}`} app={app} days={days} /> : null;
-        })}
-        {due.map((r) => <Row key={r.id} r={r} due />)}
-        {due.length === 0 && nudges.size === 0 && (
-          <li className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-3">
-            Nothing due — you’re on top of it. 🎯
-          </li>
-        )}
-      </ul>
+      <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-3">Due now</h2>
+      {due.length === 0 && nudges.size === 0 ? (
+        <EmptyState
+          className="mb-6"
+          icon={CircleCheck}
+          title="Nothing due"
+          body="You’re on top of it. 🎯 Applications that go quiet past your nudge window will appear here."
+        />
+      ) : (
+        <ul className="mb-6 flex flex-col gap-2">
+          {[...nudges.entries()].map(([appId, days]) => {
+            const app = appById.get(appId);
+            return app ? <NudgeRow key={`nudge-${appId}`} app={app} days={days} /> : null;
+          })}
+          {due.map((r) => <Row key={r.id} r={r} due />)}
+        </ul>
+      )}
 
-      <h2 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-3">Upcoming</h2>
-      <ul className="flex flex-col gap-2 pb-8">
-        {upcoming.map((r) => <Row key={r.id} r={r} due={false} />)}
-        {upcoming.length === 0 && (
-          <li className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-ink-3">
-            No upcoming reminders.
-          </li>
-        )}
-      </ul>
+      <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-3">Upcoming</h2>
+      {upcoming.length === 0 ? (
+        <EmptyState
+          className="mb-8"
+          icon={BellRing}
+          title="No upcoming reminders"
+          body="Add a follow-up or interview reminder from an application and it lines up here by date."
+        />
+      ) : (
+        <ul className="flex flex-col gap-2 pb-8">
+          {upcoming.map((r) => <Row key={r.id} r={r} due={false} />)}
+        </ul>
+      )}
     </div>
   );
 }

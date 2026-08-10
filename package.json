@@ -18,6 +18,8 @@
     "@expo-google-fonts/lora": "^0.4.2",
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@react-pdf/renderer": "^4.5.1",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.2",
     "canvas-confetti": "^1.9.4",
     "cmdk": "^1.1.1",
     "dexie": "^4.4.4",

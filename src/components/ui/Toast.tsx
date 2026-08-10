@@ -33,7 +33,7 @@ export function Toaster() {
             initial={{ opacity: 0, y: 16, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            className="flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 text-sm font-medium shadow-lg"
+            className="flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 text-base font-medium shadow-lg"
           >
             {icons[t.kind]} {t.message}
           </motion.div>

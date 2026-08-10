@@ -86,4 +86,14 @@ describe("exportio", () => {
     expect(out.profile).toBeNull();
     expect(out.cvdocs).toEqual([]);
   });
+
+  it("defaults ghostDays to 14 when importing old exports without ghostDays", () => {
+    const oldSettings = { id: "singleton" as const, nudgeDays: 7, currency: "USD", theme: "light" as const, demo: false };
+    const v2 = JSON.stringify({
+      version: 2, exportedAt: "x",
+      data: { ...snap, settings: oldSettings },
+    });
+    const out = fromJson(v2);
+    expect(out.settings.ghostDays).toBe(14);
+  });
 });

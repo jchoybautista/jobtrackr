@@ -11,15 +11,16 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 
-function Row({ id, label, itemClassName, children }: {
+function Row({ id, label, itemClassName, children, draggable = true }: {
   id: string;
   label: string;
   itemClassName: string;
   children: (handle: ReactNode) => ReactNode;
+  draggable?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !draggable });
 
-  const handle = (
+  const handle = draggable ? (
     <button
       type="button"
       aria-label={`Reorder ${label} (drag, or use arrow keys)`}
@@ -29,7 +30,7 @@ function Row({ id, label, itemClassName, children }: {
     >
       <GripVertical className="h-4 w-4" aria-hidden />
     </button>
-  );
+  ) : null;
 
   // The <li> IS the sortable node. Wrapping it in a positioned <div> would put
   // a non-<li> child inside the <ul> and break list semantics for screen
@@ -54,7 +55,7 @@ function Row({ id, label, itemClassName, children }: {
  *  API (the settings pipeline) wants the one moved item, since a splice shifts
  *  every item in between and diffing indices would fire a cascade of moves. */
 export function SortableList<T>({
-  items, getId, getLabel, onReorder, className = "", itemClassName = "", children,
+  items, getId, getLabel, onReorder, className = "", itemClassName = "", children, isDraggable = () => true,
 }: {
   items: T[];
   getId: (item: T) => string;
@@ -65,6 +66,9 @@ export function SortableList<T>({
   /** Classes for each <li>. */
   itemClassName?: string;
   children: (item: T, handle: ReactNode) => ReactNode;
+  /** Items for which this returns false render without a drag handle and
+   *  cannot be picked up — e.g. pinned pipeline stages. */
+  isDraggable?: (item: T) => boolean;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -88,7 +92,8 @@ export function SortableList<T>({
       <SortableContext items={items.map(getId)} strategy={verticalListSortingStrategy}>
         <ul className={className}>
           {items.map((item) => (
-            <Row key={getId(item)} id={getId(item)} label={getLabel(item)} itemClassName={itemClassName}>
+            <Row key={getId(item)} id={getId(item)} label={getLabel(item)} itemClassName={itemClassName}
+              draggable={isDraggable(item)}>
               {(handle) => children(item, handle)}
             </Row>
           ))}

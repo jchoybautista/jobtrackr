@@ -6,11 +6,13 @@ import { DEFAULT_SETTINGS } from "@/lib/repo";
 
 const NOW = "2026-07-06T12:00:00.000Z";
 const stages: Stage[] = [
-  { id: "saved", name: "Saved", color: "lavender", order: 0, kind: "pipeline" },
-  { id: "applied", name: "Applied", color: "pink", order: 1, kind: "pipeline" },
-  { id: "interview", name: "Interview", color: "yellow", order: 2, kind: "pipeline" },
-  { id: "offer", name: "Offer", color: "mint", order: 3, kind: "won" },
-  { id: "rejected", name: "Rejected", color: "gray", order: 4, kind: "lost" },
+  { id: "saved", name: "Saved", color: "lavender", order: 0, kind: "pipeline", role: "saved", pinned: true },
+  { id: "screening", name: "Screening", color: "sky", order: 1, kind: "pipeline", role: "screening" },
+  { id: "interview", name: "Interview", color: "yellow", order: 2, kind: "pipeline", role: "interview" },
+  { id: "technical", name: "Technical", color: "peach", order: 3, kind: "pipeline", role: "technical" },
+  { id: "final", name: "Final interview", color: "orchid", order: 4, kind: "pipeline", role: "final" },
+  { id: "rejected", name: "Rejected", color: "gray", order: 5, kind: "lost", role: "rejected" },
+  { id: "offer", name: "Offer", color: "mint", order: 6, kind: "won", role: "offer", pinned: true },
 ];
 const app = (id: string, stageId: string, o: Partial<Application> = {}): Application => ({
   id, company: id, role: "Engineer", tagIds: [], stageId, order: 0,
@@ -20,8 +22,8 @@ const app = (id: string, stageId: string, o: Partial<Application> = {}): Applica
 describe("computeNudges", () => {
   it("nudges silent apps past threshold, skips Saved and terminal stages", () => {
     const apps = [
-      app("quiet", "applied"),                                   // 16 days silent
-      app("fresh", "applied", { updatedAt: "2026-07-05T12:00:00.000Z" }),
+      app("quiet", "screening"),                                   // 16 days silent
+      app("fresh", "screening", { updatedAt: "2026-07-05T12:00:00.000Z" }),
       app("saved", "saved"),
       app("done", "rejected"),
     ];
@@ -46,8 +48,8 @@ describe("dueReminders", () => {
 
 describe("filterApplications", () => {
   const apps = [
-    app("a", "applied", { company: "Stripe", role: "Designer", tagIds: ["tag-dream"], salaryMin: 120000 }),
-    app("b", "applied", { company: "Linear", role: "Engineer", source: "Referral" }),
+    app("a", "screening", { company: "Stripe", role: "Designer", tagIds: ["tag-dream"], salaryMin: 120000 }),
+    app("b", "screening", { company: "Linear", role: "Engineer", source: "Referral" }),
   ];
   it("matches search on company or role, case-insensitive", () => {
     expect(filterApplications(apps, { search: "stri", tagIds: [], sources: [], hasSalary: null })).toHaveLength(1);
@@ -61,34 +63,89 @@ describe("filterApplications", () => {
 });
 
 describe("computeMetrics", () => {
-  it("computes rates from stages and interviews", () => {
+  const withFurthest = (id: string, stageId: string, furthestStageId?: string, o: Partial<Application> = {}) =>
+    app(id, stageId, { furthestStageId: furthestStageId ?? stageId, ...o });
+
+  it("computes passing rates from furthest reached", () => {
     const snap: Snapshot = {
       stages,
       applications: [
-        app("s1", "saved"), app("a1", "applied"), app("a2", "applied"),
-        app("i1", "interview"), app("o1", "offer"), app("r1", "rejected"),
+        withFurthest("saved1", "saved"),
+        withFurthest("scr1", "screening"),
+        withFurthest("int1", "interview"),
+        withFurthest("tech1", "technical"),
+        // rejected after reaching technical → counts against technical + interview denominators
+        withFurthest("rejTech", "rejected", "technical"),
+        withFurthest("offer1", "offer", "final"),
       ],
       tags: [], contacts: [], events: [], notes: [], reminders: [],
-      interviews: [{ id: "iv", applicationId: "i1", roundType: "phone", scheduledAt: NOW }],
-      settings: DEFAULT_SETTINGS,
+      interviews: [],
+      settings: { ...DEFAULT_SETTINGS, ghostDays: 14 },
       profile: null, cvdocs: [],
     };
     const m = computeMetrics(snap, NOW);
-    expect(m.total).toBe(6);
-    expect(m.active).toBe(4);      // saved, a1, a2, i1
+    expect(m.applied).toBe(5); // all but saved1
     expect(m.offers).toBe(1);
-    expect(m.applied).toBe(5);     // all but "s1"
-    expect(m.responseRate).toBeCloseTo(3 / 5); // i1 (interview) + o1 + r1
-    expect(m.interviewRate).toBeCloseTo(1 / 5);
+    // reached interview: int1, tech1, rejTech, offer1 = 4; passed interview: tech1, rejTech, offer1 = 3
+    expect(m.interviewPassRate).toBeCloseTo(3 / 4);
+    // reached technical: tech1, rejTech, offer1 = 3; passed technical: offer1 = 1
+    expect(m.technicalPassRate).toBeCloseTo(1 / 3);
     expect(m.funnel[0]).toEqual({ label: "Applied", count: 5, pct: 100 });
+    expect(m.funnel.find((f) => f.label === "Offer")).toEqual({ label: "Offer", count: 1, pct: 20 });
+  });
+
+  it("constrains the pass-rate numerator to the denominator (offer apps that skipped a stage don't inflate the rate)", () => {
+    const snap: Snapshot = {
+      stages,
+      applications: [
+        // reached technical and is still sitting there — has NOT passed it
+        withFurthest("stuck", "technical"),
+        // dragged straight to Offer; furthest never advanced past Saved, so it
+        // never reached technical at all
+        withFurthest("skipped", "offer", "saved"),
+      ],
+      tags: [], contacts: [], events: [], notes: [], reminders: [], interviews: [],
+      settings: { ...DEFAULT_SETTINGS, ghostDays: 14 }, profile: null, cvdocs: [],
+    };
+    const m = computeMetrics(snap, NOW);
+    // denom = 1 ("stuck" is the only app that reached technical). The old
+    // numerator counted "skipped" too (any won-stage app "passes"), giving
+    // 1/1 = 100% despite nobody actually passing technical. The fix
+    // constrains the numerator to apps that also reached the stage: 0/1.
+    expect(m.technicalPassRate).toBe(0);
+  });
+
+  it("returns null pass rate when nobody reached the stage", () => {
+    const snap: Snapshot = {
+      stages, applications: [app("s", "saved", { furthestStageId: "saved" })],
+      tags: [], contacts: [], events: [], notes: [], reminders: [], interviews: [],
+      settings: { ...DEFAULT_SETTINGS, ghostDays: 14 }, profile: null, cvdocs: [],
+    };
+    expect(computeMetrics(snap, NOW).technicalPassRate).toBeNull();
+  });
+
+  it("counts ghosted apps past Saved and silent beyond ghostDays", () => {
+    const snap: Snapshot = {
+      stages,
+      applications: [
+        app("ghost", "screening", { furthestStageId: "screening", updatedAt: "2026-06-01T00:00:00.000Z" }),
+        app("fresh", "screening", { furthestStageId: "screening", updatedAt: NOW }),
+        app("savedGhost", "saved", { furthestStageId: "saved", updatedAt: "2026-06-01T00:00:00.000Z" }),
+      ],
+      tags: [], contacts: [], events: [], notes: [], reminders: [], interviews: [],
+      settings: { ...DEFAULT_SETTINGS, ghostDays: 14 }, profile: null, cvdocs: [],
+    };
+    const m = computeMetrics(snap, NOW);
+    expect(m.ghostedCount).toBe(1); // only "ghost"
+    expect(m.screeningCount).toBe(2); // ghost + fresh currently in screening
   });
 });
 
 describe("format", () => {
   it("formats salary ranges compactly", () => {
-    expect(formatSalary(app("x", "applied", { salaryMin: 120000, salaryMax: 140000, currency: "USD" }))).toBe("$120k–140k");
-    expect(formatSalary(app("y", "applied", { salaryMin: 135000, currency: "USD" }))).toBe("$135k");
-    expect(formatSalary(app("z", "applied"))).toBeNull();
+    expect(formatSalary(app("x", "screening", { salaryMin: 120000, salaryMax: 140000, currency: "USD" }))).toBe("$120k–140k");
+    expect(formatSalary(app("y", "screening", { salaryMin: 135000, currency: "USD" }))).toBe("$135k");
+    expect(formatSalary(app("z", "screening"))).toBeNull();
   });
   it("renders relative days", () => {
     expect(relativeDays("2026-07-06T09:00:00.000Z", NOW)).toBe("today");

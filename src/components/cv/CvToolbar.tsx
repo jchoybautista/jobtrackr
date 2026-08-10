@@ -68,7 +68,7 @@ export function CvToolbar({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
 
       {/* Accent color */}
       <div className="relative flex items-center gap-2">
-        <span className="text-xs font-semibold text-ink-2">Accent</span>
+        <span className="text-sm font-semibold text-ink-2">Accent</span>
         <button
           ref={dotRef}
           type="button"
@@ -101,7 +101,7 @@ export function CvToolbar({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
               : "Show photo"
         }
         onClick={() => void updateCv(cv.id, { showPhoto: !cv.showPhoto })}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-40 ${
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-40 ${
           cv.showPhoto && !isClassic
             ? "border-ink bg-ink text-white"
             : "border-line bg-surface text-ink-2 hover:bg-sunken"
@@ -117,7 +117,7 @@ export function CvToolbar({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
 
       {/* Link to application */}
       <div className="flex items-center gap-2">
-        <label htmlFor="cv-link-app" className="text-xs font-semibold text-ink-2">
+        <label htmlFor="cv-link-app" className="text-sm font-semibold text-ink-2">
           Linked to
         </label>
         <Select
@@ -125,7 +125,7 @@ export function CvToolbar({ cv, photoUrl }: { cv: CvDoc; photoUrl?: string }) {
           value={cv.applicationId ?? ""}
           onChange={(e) => void updateCv(cv.id, { applicationId: e.target.value || undefined })}
           wrapperClassName="max-w-44"
-          className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink focus-visible:outline-2 focus-visible:outline-ink"
+          className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm font-medium text-ink focus-visible:outline-2 focus-visible:outline-ink"
         >
           <option value="">Not linked</option>
           {sortedApps.map((a) => (

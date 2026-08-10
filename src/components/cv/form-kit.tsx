@@ -5,13 +5,23 @@ import { Plus, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { CvContent } from "@/cv/types";
 
-export const inputClass = "w-full rounded-xl border border-line px-3 py-2 text-sm placeholder:text-ink-3";
-export const labelClass = "mb-1 block text-[11px] font-semibold text-ink-2";
+export const inputClass = "w-full rounded-xl border border-line px-3 py-2 text-base placeholder:text-ink-3";
+export const labelClass = "mb-1 block text-xs font-semibold text-ink-2";
 
 /** The uniform contract every content form implements. */
 export interface ContentFormProps {
   content: CvContent;
   onChange: (patch: Partial<CvContent>) => void;
+}
+
+/** Empty-section note for the entry-list forms. The "Add …" button below it is
+ *  the action, so this only has to say the section is empty on purpose. */
+export function EmptyHint({ children }: { children: ReactNode }) {
+  return (
+    <p className="rounded-xl border border-dashed border-line px-3 py-4 text-center text-sm text-ink-3">
+      {children}
+    </p>
+  );
 }
 
 /* ---------- immutable list helpers ---------- */
@@ -96,7 +106,7 @@ export function EntryShell({ title, onRemove, onMoveUp, onMoveDown, children }: 
   return (
     <div className="rounded-2xl border border-line p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-sm font-bold">{title || "Untitled"}</p>
+        <p className="min-w-0 truncate text-base font-bold">{title || "Untitled"}</p>
         <div className="flex shrink-0 items-center gap-0.5">
           {onMoveUp && (
             <button type="button" aria-label={`Move ${name} up`} onClick={onMoveUp} className={iconBtn}>
