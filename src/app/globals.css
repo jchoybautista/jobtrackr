@@ -37,3 +37,10 @@ body { background: var(--color-canvas); color: var(--color-ink); -webkit-font-sm
     scroll-behavior: auto !important;
   }
 }
+
+/* Auth hero: cards settle into the funnel on load. Motion is ambient, so it
+   is dropped entirely rather than shortened when reduced motion is asked for. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
