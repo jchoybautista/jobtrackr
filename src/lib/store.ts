@@ -132,7 +132,7 @@ export const useApp = create<AppState>()((set, get) => ({
         snap = await repo.loadAll();
       }
       if (seq !== hydrateSeq) return;  // a newer hydrate superseded this one
-      set(() => ({ ...snap, ready: true }));
+      set(() => ({ ...snap, ready: true, persistBroken: false }));
     } catch {
       if (seq !== hydrateSeq) return;
       set(() => ({
@@ -149,7 +149,7 @@ export const useApp = create<AppState>()((set, get) => ({
       stages: [], applications: [], tags: [], interviews: [], contacts: [],
       events: [], notes: [], reminders: [], settings: repo.DEFAULT_SETTINGS,
       profile: null, cvdocs: [], ready: false, selectedAppId: null,
-      filters: EMPTY_FILTERS,
+      filters: EMPTY_FILTERS, persistBroken: false,
     }));
   },
 
