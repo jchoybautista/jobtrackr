@@ -44,3 +44,14 @@ body { background: var(--color-canvas); color: var(--color-ink); -webkit-font-sm
   from { opacity: 0; transform: translateY(14px) scale(0.97); }
   to   { opacity: 1; transform: none; }
 }
+
+/* Demo-link pointer: nudges right and back, nonstop, to draw the eye to the
+   "Explore the demo instead" link. Collapsed to a single still frame by the
+   prefers-reduced-motion rule above. */
+@keyframes nudge-x {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(5px); }
+}
+.icon-nudge {
+  animation: nudge-x 1.3s ease-in-out infinite;
+}
