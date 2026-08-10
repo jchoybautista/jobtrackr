@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, KanbanSquare, Table2, FileText, Bell, Settings } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { dueReminders } from "@/lib/selectors";
+import { AccountMenu } from "./AccountMenu";
 
 export const NAV = [
   { href: "/dashboard", label: "Dashboard", short: "Stats", icon: LayoutDashboard },
@@ -53,6 +54,7 @@ export function Sidebar() {
           );
         })}
       </ul>
+      <AccountMenu />
     </nav>
   );
 }
