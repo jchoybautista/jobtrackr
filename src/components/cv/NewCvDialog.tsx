@@ -32,18 +32,18 @@ export function NewCvDialog({ open, onClose }: { open: boolean; onClose: () => v
     <Dialog open={open} onClose={onClose} title="New CV" maxWidth="max-w-2xl">
       <form onSubmit={submit} className="flex flex-col gap-4">
         <div>
-          <label htmlFor="cv-name" className="mb-1.5 block text-sm font-semibold text-ink-2">
+          <label htmlFor="cv-name" className="mb-1.5 block text-xs font-semibold text-ink-2">
             CV name
           </label>
           <input
             id="cv-name" autoFocus value={name} onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Product Designer — Stripe"
-            className="w-full rounded-xl border border-line px-3.5 py-2.5 text-base placeholder:text-ink-3"
+            className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm placeholder:text-ink-3"
           />
         </div>
 
         <fieldset>
-          <legend className="mb-1.5 block text-sm font-semibold text-ink-2">Template</legend>
+          <legend className="mb-1.5 block text-xs font-semibold text-ink-2">Template</legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {TEMPLATES.map((t) => {
               const on = t.id === templateId;
@@ -57,10 +57,10 @@ export function NewCvDialog({ open, onClose }: { open: boolean; onClose: () => v
                 >
                   <MiniMock templateId={t.id} accent={PALETTE.sky.hex} className="w-full" />
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-base font-bold">{t.name}</span>
+                    <span className="text-sm font-bold">{t.name}</span>
                     <AtsBadge atsSafe={t.atsSafe} />
                   </div>
-                  <span className="text-xs leading-snug text-ink-3">{t.note}</span>
+                  <span className="text-[11px] leading-snug text-ink-3">{t.note}</span>
                 </button>
               );
             })}

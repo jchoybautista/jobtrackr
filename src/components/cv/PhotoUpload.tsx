@@ -53,7 +53,7 @@ export function PhotoUpload() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={inputId} className="text-xs font-semibold text-ink-2">
+        <label htmlFor={inputId} className="text-[11px] font-semibold text-ink-2">
           Profile photo
         </label>
         <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export function PhotoUpload() {
             </Button>
           )}
         </div>
-        <p className="text-xs text-ink-3">JPG, PNG, or WebP · up to 2 MB</p>
+        <p className="text-[11px] text-ink-3">JPG, PNG, or WebP · up to 2 MB</p>
       </div>
     </div>
   );

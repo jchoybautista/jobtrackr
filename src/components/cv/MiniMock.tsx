@@ -51,11 +51,11 @@ export function MiniMock({
 /** ATS parse-safety badge — icon + text (never color alone). */
 export function AtsBadge({ atsSafe }: { atsSafe: boolean }) {
   return atsSafe ? (
-    <span className="inline-flex items-center gap-1 rounded-full bg-success-bg px-2 py-0.5 text-xs font-bold text-success">
+    <span className="inline-flex items-center gap-1 rounded-full bg-success-bg px-2 py-0.5 text-[10px] font-bold text-success">
       <ShieldCheck className="h-3 w-3" aria-hidden /> ATS-safe
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-full bg-warn-bg px-2 py-0.5 text-xs font-bold text-warn">
+    <span className="inline-flex items-center gap-1 rounded-full bg-warn-bg px-2 py-0.5 text-[10px] font-bold text-warn">
       <Info className="h-3 w-3" aria-hidden /> Stylized
     </span>
   );

@@ -1,8 +1,6 @@
 import type {
   Application, Filters, Interview, Reminder, Snapshot, Stage,
 } from "./types";
-import { furthestOrderOf, orderOfRole, stageByRole } from "./furthest";
-import type { StageRole } from "./types";
 
 const DAY = 86_400_000;
 
@@ -50,12 +48,7 @@ export function filterApplications(apps: Application[], f: Filters): Application
 
 export interface Metrics {
   total: number; active: number; offers: number; applied: number;
-  responseRate: number;
-  interviewPassRate: number | null;
-  technicalPassRate: number | null;
-  screeningCount: number;
-  rejectedCount: number;
-  ghostedCount: number;
+  responseRate: number; interviewRate: number;
   weekly: { label: string; count: number }[];
   funnel: { label: string; count: number; pct: number }[];
 }
@@ -72,11 +65,9 @@ function mondayUtc(date: Date): number {
 }
 
 export function computeMetrics(snap: Snapshot, nowIso: string): Metrics {
-  const stages = snap.stages;
-  const stageById = new Map(stages.map((s) => [s.id, s]));
+  const stageById = new Map(snap.stages.map((s) => [s.id, s]));
+  const withInterview = new Set(snap.interviews.map((i) => i.applicationId));
   const apps = snap.applications;
-  const now = Date.parse(nowIso);
-  const ghostDays = snap.settings.ghostDays ?? 14;
 
   const stageOf = (a: Application) => stageById.get(a.stageId);
   const active = apps.filter((a) => stageOf(a)?.kind === "pipeline");
@@ -85,56 +76,11 @@ export function computeMetrics(snap: Snapshot, nowIso: string): Metrics {
     const s = stageOf(a);
     return s && (s.kind !== "pipeline" || s.order > 0);
   });
-
-  const reached = (a: Application, role: StageRole) => {
-    const ro = orderOfRole(stages, role);
-    return ro != null && furthestOrderOf(a, stages) >= ro;
-  };
-  const passed = (a: Application, role: StageRole) => {
-    const ro = orderOfRole(stages, role);
-    if (ro == null) return false;
-    return furthestOrderOf(a, stages) > ro || stageOf(a)?.kind === "won";
-  };
-  const rate = (role: StageRole): number | null => {
-    const denom = apps.filter((a) => reached(a, role)).length;
-    if (denom === 0) return null;
-    const num = apps.filter((a) => reached(a, role) && passed(a, role)).length;
-    return num / denom;
-  };
-
   const responded = appliedApps.filter((a) => {
-    const k = stageOf(a)?.kind;
-    return reached(a, "screening") || k === "won" || k === "lost";
+    const s = stageOf(a)!;
+    return withInterview.has(a.id) || s.kind === "won" || s.kind === "lost";
   });
-
-  const ghostedCount = apps.filter((a) => {
-    const s = stageOf(a);
-    if (!s || s.kind !== "pipeline" || s.role === "saved") return false;
-    return (now - Date.parse(a.updatedAt)) / DAY >= ghostDays;
-  }).length;
-
-  const screeningStage = stageByRole(stages, "screening");
-  const screeningCount = screeningStage
-    ? apps.filter((a) => a.stageId === screeningStage.id).length : 0;
-  const rejectedCount = apps.filter((a) => stageOf(a)?.kind === "lost").length;
-
-  const applied = appliedApps.length;
-  const pct = (n: number) => (applied === 0 ? 0 : Math.round((n / applied) * 100));
-  const reachedCount = (role: StageRole) => apps.filter((a) => reached(a, role)).length;
-
-  const funnelRoles: { role: StageRole; label: string; count: number }[] = [
-    { role: "screening", label: "Screening", count: reachedCount("screening") },
-    { role: "interview", label: "Interview", count: reachedCount("interview") },
-    { role: "technical", label: "Technical", count: reachedCount("technical") },
-    { role: "final", label: "Final", count: reachedCount("final") },
-  ];
-  const funnel = [
-    { label: "Applied", count: applied, pct: 100 },
-    ...funnelRoles
-      .filter((r) => stageByRole(stages, r.role))
-      .map((r) => ({ label: r.label, count: r.count, pct: pct(r.count) })),
-    ...(stageByRole(stages, "offer") ? [{ label: "Offer", count: offers.length, pct: pct(offers.length) }] : []),
-  ];
+  const interviewed = appliedApps.filter((a) => withInterview.has(a.id));
 
   // Last 8 UTC weeks (Monday week-start), oldest first.
   const thisMonday = mondayUtc(new Date(nowIso));
@@ -153,18 +99,20 @@ export function computeMetrics(snap: Snapshot, nowIso: string): Metrics {
     };
   });
 
+  const applied = appliedApps.length;
+  const pct = (n: number) => (applied === 0 ? 0 : Math.round((n / applied) * 100));
   return {
     total: apps.length,
     active: active.length,
     offers: offers.length,
     applied,
     responseRate: applied === 0 ? 0 : responded.length / applied,
-    interviewPassRate: rate("interview"),
-    technicalPassRate: rate("technical"),
-    screeningCount,
-    rejectedCount,
-    ghostedCount,
+    interviewRate: applied === 0 ? 0 : interviewed.length / applied,
     weekly,
-    funnel,
+    funnel: [
+      { label: "Applied", count: applied, pct: pct(applied) },
+      { label: "Interviewed", count: interviewed.length, pct: pct(interviewed.length) },
+      { label: "Offer", count: offers.length, pct: pct(offers.length) },
+    ],
   };
 }

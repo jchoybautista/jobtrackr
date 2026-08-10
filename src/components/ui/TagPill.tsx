@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 
 export function TagPill({ name, onRemove }: { name: string; onRemove?: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs font-semibold text-ink-2">
+    <span className="inline-flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink-2">
       {name}
       {onRemove && (
         <button

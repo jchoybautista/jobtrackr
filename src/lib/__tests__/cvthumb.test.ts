@@ -15,7 +15,7 @@ import { useApp } from "@/lib/store";
 beforeEach(async () => {
   await clearAll();
   useApp.setState({ ready: false, profile: null, cvdocs: [] });
-  await useApp.getState().hydrate({ kind: "user", userId: "test-user" });
+  await useApp.getState().hydrate();
 });
 
 describe("cvthumbs repo", () => {

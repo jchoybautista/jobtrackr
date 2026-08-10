@@ -3,27 +3,19 @@
 import { create } from "zustand";
 import type {
   Application, Contact, Filters, Interview, NoteDoc, PaletteKey,
-  Reminder, SettingsDoc, Snapshot, Stage, Tag, Profile, CvDoc,
+  Reminder, SettingsDoc, Snapshot, Tag, Profile, CvDoc,
 } from "./types";
 import { EMPTY_FILTERS } from "./types";
 import type { CvContent, CvSection, TemplateId } from "@/cv/types";
 import { emptyCvContent, DEFAULT_SECTIONS } from "@/cv/types";
 import { newId } from "./id";
-import { moveCard, reorderStages, reorderStagesPinned, reassignStageCards } from "./ordering";
+import { moveCard, reorderStages } from "./ordering";
 import { PALETTE_KEYS } from "./palette";
 import * as repo from "./repo";
 import { fromJson, toJson } from "./exportio";
 import { seedIfEmpty, clearDemoData, DEFAULT_STAGES, PRESET_TAGS } from "./seed";
-import { needsMigration, migrateSnapshot } from "./migrate";
-import { applyFurthestOnMove } from "./furthest";
-import { setScope, closeDb, type DbScope } from "./db";
-import { adoptLegacyDatabase } from "./legacy";
-import { DEMO_COOKIE } from "./auth/routes";
 
 const nowIso = () => new Date().toISOString();
-
-/** Guards against a slow hydrate landing after the user switched accounts. */
-let hydrateSeq = 0;
 
 interface AppState extends Snapshot {
   ready: boolean;
@@ -31,8 +23,7 @@ interface AppState extends Snapshot {
   filters: Filters;
   selectedAppId: string | null;
 
-  hydrate(scope: DbScope): Promise<void>;
-  resetLocal(): void;
+  hydrate(): Promise<void>;
   addApplication(input: Partial<Application> & { company: string; role: string }): Promise<Application>;
   updateApplication(id: string, patch: Partial<Application>): Promise<void>;
   removeApplication(id: string): Promise<void>;
@@ -73,15 +64,6 @@ interface AppState extends Snapshot {
   selectApp(id: string | null): void;
 }
 
-/** A new account needs a usable board — default stages and preset tags — but
- *  none of the demo's sample applications. */
-async function ensureBaseline(): Promise<void> {
-  if ((await repo.loadAll()).stages.length > 0) return;
-  await repo.putStages(DEFAULT_STAGES);
-  for (const t of PRESET_TAGS) await repo.putTag(t);
-  await repo.putSettings({ ...repo.DEFAULT_SETTINGS });
-}
-
 async function logEvent(
   set: (fn: (s: AppState) => Partial<AppState>) => void,
   applicationId: string, kind: "created" | "stage_move" | "edit" | "note" | "manual", message: string,
@@ -99,43 +81,12 @@ export const useApp = create<AppState>()((set, get) => ({
   ready: false, persistBroken: false,
   filters: EMPTY_FILTERS, selectedAppId: null,
 
-  async hydrate(scope) {
-    // Switching accounts mid-load must not let the previous account's snapshot
-    // land in the new account's UI: loadAll() binds its database before eleven
-    // awaits, so a slow read can outlive the scope that started it.
-    const seq = ++hydrateSeq;
+  async hydrate() {
     try {
-      setScope(scope);
-      // First sign-in on a device that predates accounts: claim the old data
-      // before anything reads an empty board and seeds over the top of it.
-      // Its own try/catch: a failed migration is not broken storage. The legacy
-      // database is untouched and the next sign-in retries, so the right
-      // behaviour is to carry on with an empty board rather than fall into the
-      // outer catch and tell the user their storage is unavailable.
-      if (scope.kind === "user") {
-        try {
-          await adoptLegacyDatabase(scope.userId);
-        } catch (err) {
-          if (process.env.NODE_ENV !== "production") {
-            console.warn("Could not adopt the pre-auth database; will retry next sign-in", err);
-          }
-        }
-      }
-
-      // Only the demo sandbox gets sample data — a real account starts empty.
-      if (scope.kind === "demo") await seedIfEmpty();
-      else await ensureBaseline();
-
-      let snap = await repo.loadAll();
-      if (needsMigration(snap)) {
-        snap = migrateSnapshot(snap);
-        await repo.importSnapshot(snap, "replace");
-        snap = await repo.loadAll();
-      }
-      if (seq !== hydrateSeq) return;  // a newer hydrate superseded this one
-      set(() => ({ ...snap, ready: true, persistBroken: false }));
+      await seedIfEmpty();
+      const snap = await repo.loadAll();
+      set(() => ({ ...snap, ready: true }));
     } catch {
-      if (seq !== hydrateSeq) return;
       set(() => ({
         stages: DEFAULT_STAGES, tags: PRESET_TAGS,
         settings: repo.DEFAULT_SETTINGS, profile: null, cvdocs: [],
@@ -144,28 +95,12 @@ export const useApp = create<AppState>()((set, get) => ({
     }
   },
 
-  resetLocal() {
-    // Bump the guard too: sign-out can land while a hydrate for the account
-    // being left is still in flight, and without this its snapshot resolves
-    // after the clear below and repopulates the store it just emptied.
-    hydrateSeq++;
-    closeDb();
-    set(() => ({
-      stages: [], applications: [], tags: [], interviews: [], contacts: [],
-      events: [], notes: [], reminders: [], settings: repo.DEFAULT_SETTINGS,
-      profile: null, cvdocs: [], ready: false, selectedAppId: null,
-      filters: EMPTY_FILTERS, persistBroken: false,
-    }));
-  },
-
   async addApplication(input) {
     const s = get();
     const stageId = input.stageId ?? s.stages[0]?.id ?? "stage-saved";
     const order = s.applications.filter((a) => a.stageId === stageId).length;
-    const stage = s.stages.find((st) => st.id === stageId);
-    const furthestStageId = stage?.kind === "pipeline" ? stageId : undefined;
     const app: Application = {
-      tagIds: [], furthestStageId, ...input, id: newId(), stageId, order,
+      tagIds: [], ...input, id: newId(), stageId, order,
       createdAt: nowIso(), updatedAt: nowIso(),
     };
     set((st) => ({ applications: [...st.applications, app] }));
@@ -207,8 +142,7 @@ export const useApp = create<AppState>()((set, get) => ({
     const s = get();
     const stage = s.stages.find((st) => st.id === toStageId);
     const before = s.applications.find((a) => a.id === id);
-    let moved = moveCard(s.applications, id, toStageId, toIndex, nowIso());
-    moved = moved.map((a) => (a.id === id ? applyFurthestOnMove(a, toStageId, s.stages) : a));
+    const moved = moveCard(s.applications, id, toStageId, toIndex, nowIso());
     set(() => ({ applications: moved }));
     const changed = moved.filter((a, i) => a !== s.applications[i]);
     await repo.putApplications(changed).catch(() => {});
@@ -221,12 +155,9 @@ export const useApp = create<AppState>()((set, get) => ({
   async addStage(name) {
     const s = get();
     const color = PALETTE_KEYS[s.stages.length % PALETTE_KEYS.length];
-    const stage: Stage = { id: newId(), name, color, order: s.stages.length, kind: "pipeline" };
-    const sorted = [...s.stages, stage].sort((a, b) => a.order - b.order);
-    const lastPinned = sorted[sorted.length - 2]?.pinned ? sorted.length - 1 : sorted.length;
-    const next = reorderStages(sorted, stage.id, lastPinned - 1);
-    set(() => ({ stages: next }));
-    await repo.putStages(next).catch(() => {});
+    const stage = { id: newId(), name, color, order: s.stages.length, kind: "pipeline" as const };
+    set((st) => ({ stages: [...st.stages, stage] }));
+    await repo.putStage(stage).catch(() => {});
   },
 
   async renameStage(id, name) {
@@ -242,25 +173,14 @@ export const useApp = create<AppState>()((set, get) => ({
   },
 
   async moveStage(id, toIndex) {
-    const next = reorderStagesPinned(get().stages, id, toIndex);
+    const next = reorderStages(get().stages, id, toIndex);
     set(() => ({ stages: next }));
     await repo.putStages(next).catch(() => {});
   },
 
   async removeStage(id) {
-    const s = get();
-    const stage = s.stages.find((st) => st.id === id);
-    if (!stage || stage.pinned) return false;
-    const sorted = [...s.stages].sort((a, b) => a.order - b.order);
-    const idx = sorted.findIndex((st) => st.id === id);
-    const target = sorted[idx - 1] ?? sorted[idx + 1]; // previous, else next
-    let apps = s.applications;
-    if (target) apps = reassignStageCards(apps, id, target.id);
-    const stages = sorted.filter((st) => st.id !== id).map((st, i) => ({ ...st, order: i }));
-    set(() => ({ stages, applications: apps }));
-    await repo.putStages(stages).catch(() => {});
-    const moved = apps.filter((a, i) => a !== s.applications[i]);
-    if (moved.length) await repo.putApplications(moved).catch(() => {});
+    if (get().applications.some((a) => a.stageId === id)) return false;
+    set((s) => ({ stages: s.stages.filter((st) => st.id !== id) }));
     await repo.deleteStage(id).catch(() => {});
     return true;
   },
@@ -446,11 +366,6 @@ export const useApp = create<AppState>()((set, get) => ({
 
   async clearDemo() {
     await clearDemoData();
-    // Leaving the demo means leaving demo mode; without this the cookie keeps
-    // waving the visitor past the sign-in page forever.
-    if (typeof document !== "undefined") {
-      document.cookie = `${DEMO_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
-    }
     const snap = await repo.loadAll();
     set(() => ({ ...snap }));
   },
@@ -467,12 +382,7 @@ export const useApp = create<AppState>()((set, get) => ({
   async importData(json, mode) {
     const snap = fromJson(json); // throws on invalid — caller shows toast
     await repo.importSnapshot(snap, mode);
-    let loaded = await repo.loadAll();
-    if (needsMigration(loaded)) {
-      loaded = migrateSnapshot(loaded);
-      await repo.importSnapshot(loaded, "replace");
-      loaded = await repo.loadAll();
-    }
+    const loaded = await repo.loadAll();
     set(() => ({ ...loaded }));
   },
 

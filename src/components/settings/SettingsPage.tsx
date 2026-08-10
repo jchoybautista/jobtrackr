@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
-import { Download, LogOut, Moon, Trash2 } from "lucide-react";
+import { Download, Moon, Trash2 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { toCsv } from "@/lib/exportio";
 import { PALETTE } from "@/lib/palette";
@@ -14,14 +13,13 @@ import { Button } from "@/components/ui/Button";
 import { SaveFooter } from "@/components/ui/SaveFooter";
 import { SortableList } from "@/components/ui/SortableList";
 import { toast } from "@/components/ui/Toast";
-import { useSignOut } from "@/components/shell/useSignOut";
 
-const input = "rounded-xl border border-line px-3 py-2 text-base";
+const input = "rounded-xl border border-line px-3 py-2 text-sm";
 const card = "rounded-2xl border border-line-2 bg-surface p-5";
 /** Footers span the full card width and sit flush with its rounded bottom. */
 const cardFooter = "-mx-5 -mb-5 mt-4 rounded-b-2xl";
-const h2 = "mb-1 text-base font-bold";
-const sub = "mb-4 text-sm text-ink-3";
+const h2 = "mb-1 text-sm font-bold";
+const sub = "mb-4 text-xs text-ink-3";
 
 /** List rows reserve space for a grip, a colour dot and a delete button, so an
  *  add-field placed in a bare row would not share their left and right edges.
@@ -42,36 +40,7 @@ function download(filename: string, content: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-function AccountSection({ email }: { email: string | null }) {
-  const signOut = useSignOut();
-  return (
-    <section aria-label="Account" className={card}>
-      <h2 className="mb-3 text-base font-bold">Account</h2>
-      {email ? (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="min-w-0 truncate text-base text-ink-2">
-            Signed in as <span className="font-semibold text-ink">{email}</span>
-          </p>
-          <Button variant="secondary" className="h-11" onClick={() => void signOut()}>
-            <LogOut className="h-4 w-4" aria-hidden /> Sign out
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-base text-ink-2">
-            You&rsquo;re exploring the demo — no account yet.
-          </p>
-          <Link href="/signup"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-ink px-5 text-base font-semibold text-white hover:opacity-85">
-            Create an account
-          </Link>
-        </div>
-      )}
-    </section>
-  );
-}
-
-export function SettingsPage({ email }: { email: string | null }) {
+export function SettingsPage() {
   const s = useApp();
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   const [newStage, setNewStage] = useState("");
@@ -88,7 +57,7 @@ export function SettingsPage({ email }: { email: string | null }) {
   // completed Save are the same gesture, and no state is synced in an effect.
   const [stageEdits, setStageEdits] = useState<Record<string, string>>({});
   const [tagEdits, setTagEdits] = useState<Record<string, string>>({});
-  const [prefEdits, setPrefEdits] = useState<Partial<{ nudgeDays: number; ghostDays: number; currency: string }>>({});
+  const [prefEdits, setPrefEdits] = useState<Partial<{ nudgeDays: number; currency: string }>>({});
   const [confirmStage, setConfirmStage] = useState<string | null>(null);
   const [confirmTag, setConfirmTag] = useState<string | null>(null);
 
@@ -122,7 +91,7 @@ export function SettingsPage({ email }: { email: string | null }) {
   };
 
   // Preferences used to commit on every keystroke.
-  const prefs = { nudgeDays: s.settings.nudgeDays, ghostDays: s.settings.ghostDays, currency: s.settings.currency };
+  const prefs = { nudgeDays: s.settings.nudgeDays, currency: s.settings.currency };
   const prefDraft = { ...prefs, ...prefEdits };
   const prefsDirty = isDirty(prefDraft, prefs);
 
@@ -150,8 +119,6 @@ export function SettingsPage({ email }: { email: string | null }) {
     <div className="mx-auto flex max-w-3xl flex-col gap-4 px-5 pt-6 pb-10 lg:px-7">
       <h1 className="text-2xl font-extrabold tracking-tight">Settings</h1>
 
-      <AccountSection email={email} />
-
       <section aria-label="Pipeline" className={card}>
         <h2 className={h2}>Pipeline</h2>
         <p className={sub}>Rename, reorder, recolor, or add columns. Colors come from the JobTrackr pastel set.</p>
@@ -162,11 +129,10 @@ export function SettingsPage({ email }: { email: string | null }) {
           onReorder={(_next, moved) => void s.moveStage(moved.id, moved.toIndex)}
           className="mb-3 flex flex-col gap-2"
           itemClassName="relative flex items-center gap-2.5"
-          isDraggable={(st) => !st.pinned}
         >
             {(st, handle) => (
               <>
-                {handle ?? <GripSpacer />}
+                {handle}
                 <button
                   ref={pickerFor === st.id ? dotRef : undefined}
                   type="button" aria-label={`Change ${st.name} color`} aria-expanded={pickerFor === st.id}
@@ -185,14 +151,11 @@ export function SettingsPage({ email }: { email: string | null }) {
                 <label htmlFor={`stage-${st.id}`} className="sr-only">{st.name} column name</label>
                 <input id={`stage-${st.id}`} value={stageDraft[st.id] ?? ""}
                   onChange={(e) => setStageEdits({ ...stageEdits, [st.id]: e.target.value })}
-                  disabled={!!st.role} title={st.role ? "Default stage names are fixed" : undefined}
-                  className={`${input} flex-1 disabled:cursor-not-allowed disabled:opacity-60`} />
-                {st.pinned ? <DeleteSpacer /> : (
-                  <Button variant="ghost" size="sm" aria-label={`Delete ${st.name} column`}
-                    onClick={() => setConfirmStage(st.id)}>
-                    <Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden />
-                  </Button>
-                )}
+                  className={`${input} flex-1`} />
+                <Button variant="ghost" size="sm" aria-label={`Delete ${st.name} column`}
+                  onClick={() => setConfirmStage(st.id)}>
+                  <Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden />
+                </Button>
               </>
             )}
         </SortableList>
@@ -200,13 +163,14 @@ export function SettingsPage({ email }: { email: string | null }) {
         {confirmStage && (
           <div role="alertdialog" aria-modal="true" aria-label="Delete column"
             className="mb-3 rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
-            <p className="mb-3 text-sm font-medium">
-              Delete the “{sorted.find((st) => st.id === confirmStage)?.name}” column? Any cards move to the column on its left.
+            <p className="mb-3 text-xs font-medium">
+              Delete the “{sorted.find((st) => st.id === confirmStage)?.name}” column? Its cards must be moved out first.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" size="sm" autoFocus onClick={() => setConfirmStage(null)}>Keep it</Button>
               <Button variant="danger" size="sm" onClick={async () => {
-                await s.removeStage(confirmStage);
+                const ok = await s.removeStage(confirmStage);
+                if (!ok) toast("Move or delete this column’s cards first.", "error");
                 setConfirmStage(null);
               }}>Delete column</Button>
             </div>
@@ -248,17 +212,12 @@ export function SettingsPage({ email }: { email: string | null }) {
               </Button>
             </li>
           ))}
-          {s.tags.length === 0 && (
-            <li className="rounded-xl border border-dashed border-line px-3 py-4 text-center text-sm text-ink-3">
-              No tags yet — add your first one below.
-            </li>
-          )}
         </ul>
 
         {confirmTag && (
           <div role="alertdialog" aria-modal="true" aria-label="Delete tag"
             className="mb-3 rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
-            <p className="mb-3 text-sm font-medium">
+            <p className="mb-3 text-xs font-medium">
               Delete the “{s.tags.find((t) => t.id === confirmTag)?.name}” tag? It is removed from every application.
             </p>
             <div className="flex justify-end gap-2">
@@ -291,7 +250,7 @@ export function SettingsPage({ email }: { email: string | null }) {
         <p className={sub}>Tune how JobTrackr nudges you.</p>
         <div className="flex flex-wrap gap-4">
           <div>
-            <label htmlFor="nudge-days" className="mb-1 block text-sm font-semibold text-ink-2">
+            <label htmlFor="nudge-days" className="mb-1 block text-xs font-semibold text-ink-2">
               Follow-up nudge after (days)
             </label>
             <input id="nudge-days" type="number" min={1} max={60} value={prefDraft.nudgeDays}
@@ -299,15 +258,7 @@ export function SettingsPage({ email }: { email: string | null }) {
               className={`${input} w-28`} />
           </div>
           <div>
-            <label htmlFor="ghost-days" className="mb-1 block text-sm font-semibold text-ink-2">
-              Ghosted after (days)
-            </label>
-            <input id="ghost-days" type="number" min={1} max={90} value={prefDraft.ghostDays}
-              onChange={(e) => setPrefEdits({ ...prefEdits, ghostDays: Math.max(1, Number(e.target.value) || 14) })}
-              className={`${input} w-28`} />
-          </div>
-          <div>
-            <label htmlFor="currency" className="mb-1 block text-sm font-semibold text-ink-2">Default currency</label>
+            <label htmlFor="currency" className="mb-1 block text-xs font-semibold text-ink-2">Default currency</label>
             <input id="currency" value={prefDraft.currency}
               onChange={(e) => setPrefEdits({ ...prefEdits, currency: e.target.value.toUpperCase() })}
               className={`${input} w-28`} />
@@ -339,8 +290,8 @@ export function SettingsPage({ email }: { email: string | null }) {
           </Button>
         </div>
         <fieldset className="mb-4">
-          <legend className="mb-1.5 text-sm font-semibold text-ink-2">Import JSON</legend>
-          <div className="mb-2 flex gap-3 text-sm">
+          <legend className="mb-1.5 text-xs font-semibold text-ink-2">Import JSON</legend>
+          <div className="mb-2 flex gap-3 text-xs">
             {(["merge", "replace"] as const).map((m) => (
               <label key={m} className="flex items-center gap-1.5">
                 <input type="radio" name="import-mode" value={m} checked={importMode === m}
@@ -352,11 +303,11 @@ export function SettingsPage({ email }: { email: string | null }) {
           <label htmlFor="import-file" className="sr-only">Choose JSON file</label>
           <input id="import-file" ref={fileRef} type="file" accept="application/json"
             onChange={(e) => e.target.files?.[0] && void onImportFile(e.target.files[0])}
-            className="text-sm" />
+            className="text-xs" />
         </fieldset>
         <div className="rounded-xl border border-danger-bg bg-danger-bg/40 p-4">
-          <p className="mb-2 text-sm font-bold text-danger">Danger zone</p>
-          <p className="mb-2 text-sm text-ink-2">Type <strong>DELETE</strong> to enable the button. This wipes every application, note, and reminder.</p>
+          <p className="mb-2 text-xs font-bold text-danger">Danger zone</p>
+          <p className="mb-2 text-xs text-ink-2">Type <strong>DELETE</strong> to enable the button. This wipes every application, note, and reminder.</p>
           <div className="flex gap-2">
             <label htmlFor="confirm-delete" className="sr-only">Type DELETE to confirm</label>
             <input id="confirm-delete" value={confirmText} onChange={(e) => setConfirmText(e.target.value)}

@@ -42,9 +42,5 @@ export function columnTints(key: PaletteKey) {
     // floor is sage at 4.92:1) — darker shades of the card's own hue instead of neutral gray.
     textStrong: mixWithBlack(hex, 0.4),
     textMuted: mixWithBlack(hex, 0.48),
-    // Notification pill: a darker shade of the card's own hue with a darker dashed border.
-    // textStrong holds ≥6.1:1 on pillBg, and pillBorder holds ≥3.7:1 (sage floor) on pillBg.
-    pillBg: mixWithWhite(hex, 0.48),
-    pillBorder: mixWithBlack(hex, 0.55),
   };
 }

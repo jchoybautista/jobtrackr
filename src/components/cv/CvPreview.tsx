@@ -26,7 +26,7 @@ class PreviewErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-3 rounded-2xl border border-line-2 bg-surface p-8 text-center">
-          <p className="max-w-xs text-base font-semibold text-ink-2">
+          <p className="max-w-xs text-sm font-semibold text-ink-2">
             Preview failed to render — your data is safe.
           </p>
           <Button variant="secondary" size="sm" onClick={this.props.onRetry}>
@@ -138,7 +138,7 @@ function PreviewInner({
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center rounded-2xl border border-line-2 bg-white">
-          <span className="inline-flex items-center gap-2 text-base font-medium text-ink-3">
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-ink-3">
             <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden />
             Rendering…
           </span>
@@ -149,7 +149,7 @@ function PreviewInner({
       {url && rendering && (
         <div
           aria-live="polite"
-          className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-line-2 bg-surface/90 px-3 py-1.5 text-sm font-semibold text-ink-2 shadow-sm backdrop-blur"
+          className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-line-2 bg-surface/90 px-3 py-1.5 text-xs font-semibold text-ink-2 shadow-sm backdrop-blur"
         >
           <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" aria-hidden />
           Rendering…

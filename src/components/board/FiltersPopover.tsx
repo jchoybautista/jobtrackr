@@ -30,20 +30,20 @@ export function FiltersPopover({ open, onClose }: { open: boolean; onClose: () =
 
   if (!open) return null;
   const chip = (on: boolean) =>
-    `rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${
+    `rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
       on ? "border-ink bg-ink text-white" : "border-line bg-surface text-ink-2 hover:bg-sunken"}`;
 
   return (
     <div ref={ref} role="group" aria-label="Filters"
       className="absolute right-0 top-12 z-30 w-72 rounded-2xl border border-line-2 bg-surface p-4 shadow-xl">
       <div className="mb-3">
-        <label htmlFor="filter-search" className="mb-1.5 block text-sm font-semibold text-ink-2">Search</label>
+        <label htmlFor="filter-search" className="mb-1.5 block text-xs font-semibold text-ink-2">Search</label>
         <input id="filter-search" value={filters.search}
           onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-          placeholder="Company or role…" className="w-full rounded-xl border border-line px-3 py-2 text-base placeholder:text-ink-3" />
+          placeholder="Company or role…" className="w-full rounded-xl border border-line px-3 py-2 text-sm placeholder:text-ink-3" />
       </div>
       <fieldset className="mb-3">
-        <legend className="mb-1.5 text-sm font-semibold text-ink-2">Tags</legend>
+        <legend className="mb-1.5 text-xs font-semibold text-ink-2">Tags</legend>
         <div className="flex flex-wrap gap-1.5">
           {tags.map((t) => {
             const on = filters.tagIds.includes(t.id);
@@ -58,7 +58,7 @@ export function FiltersPopover({ open, onClose }: { open: boolean; onClose: () =
       </fieldset>
       {sources.length > 0 && (
         <fieldset className="mb-3">
-          <legend className="mb-1.5 text-sm font-semibold text-ink-2">Source</legend>
+          <legend className="mb-1.5 text-xs font-semibold text-ink-2">Source</legend>
           <div className="flex flex-wrap gap-1.5">
             {sources.map((src) => {
               const on = filters.sources.includes(src);
@@ -73,7 +73,7 @@ export function FiltersPopover({ open, onClose }: { open: boolean; onClose: () =
         </fieldset>
       )}
       <fieldset className="mb-4">
-        <legend className="mb-1.5 text-sm font-semibold text-ink-2">Salary</legend>
+        <legend className="mb-1.5 text-xs font-semibold text-ink-2">Salary</legend>
         <div className="flex gap-1.5">
           {([["Any", null], ["Has salary", true], ["No salary", false]] as const).map(([lbl, val]) => (
             <button key={lbl} type="button" aria-pressed={filters.hasSalary === val} className={chip(filters.hasSalary === val)}

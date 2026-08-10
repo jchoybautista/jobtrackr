@@ -37,7 +37,7 @@ export function ColorPicker({
       aria-label="Column color"
       className="absolute left-0 top-7 z-30 w-44 rounded-2xl border border-line-2 bg-surface p-3 shadow-xl"
     >
-      <p className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-3">Column color</p>
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-3">Column color</p>
       <div className="grid grid-cols-5 gap-2">
         {PALETTE_KEYS.map((key) => (
           <button

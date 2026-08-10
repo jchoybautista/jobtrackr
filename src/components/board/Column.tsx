@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { GripVertical, Plus } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -21,7 +20,6 @@ export interface ColumnProps {
   noteCountByApp: Map<string, number>;
   docCountByApp: Map<string, number>;
   onCardClick: (id: string) => void;
-  onQuickAdd: (stageId: string) => void;
 }
 
 function SortableCard(props: JobCardProps) {
@@ -41,24 +39,17 @@ function SortableCard(props: JobCardProps) {
 }
 
 export function Column({
-  stage, apps, tagById, nudges, nextInterviewByApp, noteCountByApp, docCountByApp, onCardClick, onQuickAdd,
+  stage, apps, tagById, nudges, nextInterviewByApp, noteCountByApp, docCountByApp, onCardClick,
 }: ColumnProps) {
   const tints = columnTints(stage.color);
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const [pickerOpen, setPickerOpen] = useState(false);
   const dotRef = useRef<HTMLButtonElement>(null);
   const recolorStage = useApp((s) => s.recolorStage);
-  const sortable = useSortable({ id: `col:${stage.id}`, disabled: !!stage.pinned });
 
   return (
-    <section
-      ref={sortable.setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(sortable.transform),
-        transition: sortable.transition,
-      }}
-      aria-label={`${stage.name} column, ${apps.length} applications`}
-      className="group/col flex w-[248px] shrink-0 snap-start flex-col">
+    <section aria-label={`${stage.name} column, ${apps.length} applications`}
+      className="flex w-[248px] shrink-0 snap-start flex-col">
       <header className="relative mb-2.5 flex items-center gap-2 px-0.5">
         <button
           ref={dotRef}
@@ -77,21 +68,10 @@ export function Column({
             excludeRef={dotRef}
           />
         )}
-        <h2 className="text-base font-bold">{stage.name}</h2>
-        <span className="rounded-full bg-sunken px-2 py-0.5 text-xs font-semibold text-ink-3">
+        <h2 className="text-[13px] font-bold">{stage.name}</h2>
+        <span className="rounded-full bg-sunken px-2 py-0.5 text-[10px] font-semibold text-ink-3">
           {String(apps.length).padStart(2, "0")}
         </span>
-        {!stage.pinned && (
-          <button
-            type="button"
-            aria-label={`Reorder ${stage.name} column`}
-            className="ml-auto cursor-grab touch-none rounded-md p-1 text-ink-3 opacity-0 transition-opacity hover:bg-sunken focus-visible:opacity-100 group-hover/col:opacity-100 active:cursor-grabbing"
-            {...sortable.attributes}
-            {...sortable.listeners}
-          >
-            <GripVertical className="h-3.5 w-3.5" aria-hidden />
-          </button>
-        )}
         <ColumnMenu stage={stage} />
       </header>
       <SortableContext items={apps.map((a) => a.id)} strategy={verticalListSortingStrategy}>
@@ -116,17 +96,10 @@ export function Column({
             />
           ))}
           {apps.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-sm text-ink-3">
+            <p className="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-xs text-ink-3">
               Drop a card here
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => onQuickAdd(stage.id)}
-            className="mt-0.5 flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-3 opacity-0 transition-opacity hover:bg-sunken focus-visible:opacity-100 group-hover/col:opacity-100"
-          >
-            <Plus className="h-3.5 w-3.5" aria-hidden /> Add
-          </button>
         </div>
       </SortableContext>
     </section>

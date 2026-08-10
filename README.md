@@ -1,30 +1,12 @@
 # JobTrackr
 
-A beautiful job-hunt tracker: a pastel kanban pipeline, follow-up nudges,
-interview tracking, insights, and a built-in CV builder. Your data stays in
-your browser, scoped to your account — sign in from another device and it
-isn't there; that's by design, cloud sync is next.
+A beautiful, local-first job-hunt tracker: a pastel kanban pipeline, follow-up
+nudges, interview tracking, insights, and a built-in CV builder. Your data stays
+in your browser — no account, no backend.
 
 **[Live demo →](https://jobtrackr-seven-liard.vercel.app)**
 
 ![JobTrackr board](docs/screenshots/board.png)
-
-## Getting started
-
-JobTrackr needs a Supabase project for authentication:
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. Copy `.env.example` to `.env.local` and fill in the URL and anon key from
-   **Project Settings → API**.
-3. In **Authentication → Providers**, keep Email enabled. In
-   **Authentication → Rate limits**, set explicit per-hour limits for sign-in
-   attempts and transactional email rather than leaving the defaults.
-4. Set a spend cap and billing alert under **Organization → Billing** before
-   deploying publicly.
-5. `npm install && npm run dev`
-
-No account needed to look around — the sign-in page has an **Explore the demo**
-link that opens the app with a full sample dataset, stored only in your browser.
 
 ## Features
 
@@ -44,9 +26,8 @@ operation, visible focus, live-region status, and audited contrast.
 
 ## Stack
 
-Next.js 16 · TypeScript · Supabase (auth) · Tailwind 4 · Zustand ·
-Dexie (IndexedDB) · dnd-kit · Motion · Recharts. Tested with Vitest + Testing
-Library and Playwright.
+Next.js 16 · TypeScript · Tailwind 4 · Zustand · Dexie (IndexedDB) · dnd-kit ·
+Motion · Recharts. Tested with Vitest + Testing Library and Playwright.
 
 ## Develop
 
@@ -54,13 +35,11 @@ Library and Playwright.
 npm install
 npm run dev        # http://localhost:3000
 npm test           # unit tests (Vitest)
-npm run e2e        # smoke + auth tests (Playwright)
+npm run e2e        # smoke tests (Playwright)
 npm run build      # production build
 ```
 
-`.env.local` (see **Getting started** above) is required before `npm run dev`
-or the Playwright suite will boot — every route, including the demo path,
-runs behind middleware that needs a configured Supabase project.
+No environment variables required — the app is entirely client-side.
 
 ## Roadmap
 
@@ -68,5 +47,4 @@ runs behind middleware that needs a configured Supabase project.
   each application).
 - **Phase 4** — AI: CV bullet-point polishing and cover-letter drafting via a
   rate-limited backend endpoint.
-- **Now** — accounts with per-device data isolation. Cloud sync is next.
-- **Later** — dark mode, PWA install.
+- **Later** — auth + cloud sync, dark mode, PWA install.

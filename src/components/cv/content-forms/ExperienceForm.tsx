@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { newId } from "@/lib/id";
 import type { ExperienceEntry } from "@/cv/types";
-import { BulletsEditor, EmptyHint, EntryShell, Field, replaceAt, removeAt, moveItem, type ContentFormProps } from "../form-kit";
+import { BulletsEditor, EntryShell, Field, replaceAt, removeAt, moveItem, type ContentFormProps } from "../form-kit";
 
 export function ExperienceForm({ content, onChange }: ContentFormProps) {
   const entries = content.experience;
@@ -35,7 +35,6 @@ export function ExperienceForm({ content, onChange }: ContentFormProps) {
           <BulletsEditor bullets={e.bullets} onChange={(bullets) => patch(i, { bullets })} />
         </EntryShell>
       ))}
-      {entries.length === 0 && <EmptyHint>No roles yet — start with your most recent one.</EmptyHint>}
       <Button type="button" variant="secondary" size="sm" className="self-start"
         onClick={() => onChange({ experience: [...entries, { id: newId(), role: "", company: "", bullets: [] }] })}>
         <Plus className="h-3.5 w-3.5" aria-hidden /> Add experience
