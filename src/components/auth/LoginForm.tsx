@@ -74,7 +74,7 @@ export function LoginForm() {
           </Link>
         </div>
 
-        <Button type="submit" disabled={busy} aria-busy={busy} className="w-full">
+        <Button type="submit" disabled={busy} aria-busy={busy} className="h-11 w-full">
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>

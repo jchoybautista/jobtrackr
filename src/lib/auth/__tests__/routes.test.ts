@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { decideRoute, DEMO_COOKIE } from "@/lib/auth/routes";
+import { decideRoute, safeNextPath, DEMO_COOKIE } from "@/lib/auth/routes";
 
 const ctx = (over: Partial<Parameters<typeof decideRoute>[0]> = {}) => ({
   path: "/", hasSession: false, hasDemoCookie: false, ...over,
@@ -56,8 +56,6 @@ describe("decideRoute", () => {
       .toEqual({ action: "redirect", to: "/login?next=%2Fcv%2Fdemo-cv-2" });
   });
 });
-
-import { safeNextPath } from "@/lib/auth/routes";
 
 describe("safeNextPath", () => {
   it("keeps an ordinary in-app path", () => {
