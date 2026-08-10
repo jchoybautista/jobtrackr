@@ -17,12 +17,22 @@ const COPIED = [
  */
 const CLAIM_KEY = "jobtrackr:legacy-claimed-by";
 
+/** Backs the claim when localStorage is unavailable (private mode, blocked
+ *  storage). Only covers this page session, but that is where concurrent
+ *  sign-ins actually happen — without it, a throwing localStorage silently
+ *  removes the guard and every account adopts the same data. */
+let memoryClaim: string | null = null;
+
 function readClaim(): string | null {
-  try { return localStorage.getItem(CLAIM_KEY); } catch { return null; }
+  try { return localStorage.getItem(CLAIM_KEY); } catch { return memoryClaim; }
 }
 
 function writeClaim(userId: string): void {
-  try { localStorage.setItem(CLAIM_KEY, userId); } catch { /* private mode: fall back to the empty-target guard */ }
+  try { localStorage.setItem(CLAIM_KEY, userId); } catch { memoryClaim = userId; }
+}
+
+function clearClaim(): void {
+  try { localStorage.removeItem(CLAIM_KEY); } catch { memoryClaim = null; }
 }
 
 async function isEmpty(db: JobTrackrDb): Promise<boolean> {
@@ -54,21 +64,24 @@ export async function adoptLegacyDatabase(userId: string): Promise<"adopted" | "
   // call — which is the entire protection against two accounts signing in
   // together and both copying the same person's job hunt. Putting either half
   // after an await reopens that window.
-  const claim = readClaim();
-  if (claim && claim !== userId) return "skipped";
-  if (!claim) writeClaim(userId);
+  const existing = readClaim();
+  if (existing && existing !== userId) return "skipped";
+  const claimedHere = !existing;
+  if (claimedHere) writeClaim(userId);
 
-  if (!(await Dexie.exists(LEGACY_DB_NAME))) return "skipped";
-
-  // No version declared: Dexie reads whatever schema is on disk, so a v3
-  // database stays v3.
-  const legacy = new Dexie(LEGACY_DB_NAME);
+  let adopted = false;
+  let legacy: Dexie | null = null;
   try {
+    if (!(await Dexie.exists(LEGACY_DB_NAME))) return "skipped";
+
+    // No version declared: Dexie reads whatever schema is on disk, so a v3
+    // database stays v3.
+    legacy = new Dexie(LEGACY_DB_NAME);
     await legacy.open();
     const present = new Set(legacy.tables.map((t) => t.name));
     const tables = COPIED.filter((t) => present.has(t));
 
-    const rows = await Promise.all(tables.map((t) => legacy.table(t).toArray()));
+    const rows = await Promise.all(tables.map((t) => legacy!.table(t).toArray()));
     if (rows.every((r) => r.length === 0)) return "skipped";
 
     const target = openDb({ kind: "user", userId });
@@ -83,8 +96,13 @@ export async function adoptLegacyDatabase(userId: string): Promise<"adopted" | "
       }
     });
 
+    adopted = true;
     return "adopted";
   } finally {
-    legacy.close();
+    // Claiming up front is what makes the guard atomic, but it means a run that
+    // copies nothing would otherwise hold the device's claim forever — locking
+    // out the account that actually owns this data. Give it back.
+    if (claimedHere && !adopted) clearClaim();
+    legacy?.close();
   }
 }
