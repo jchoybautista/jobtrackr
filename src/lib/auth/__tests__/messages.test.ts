@@ -45,6 +45,13 @@ describe("authErrorMessage", () => {
     }
   });
 
+  it("does not treat a stale sign-in session as an expired link", () => {
+    // Surfaced on the sign-in form itself, not the email-link flow — must not
+    // get "That link has expired", which would be actively misleading there.
+    const msg = authErrorMessage("Invalid Refresh Token: Refresh Token Not Found");
+    expect(msg).not.toMatch(/link has expired/i);
+  });
+
   it("falls back to something actionable, never a raw code", () => {
     const msg = authErrorMessage("AuthApiError: unexpected_failure");
     expect(msg).toMatch(/try again/i);

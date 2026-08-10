@@ -154,6 +154,51 @@ describe("hydrate(scope)", () => {
     expect(useApp.getState().persistBroken).toBe(false);
   });
 
+  it("resetLocal drops a hydrate that resolves after sign-out", async () => {
+    // Same hazard as "drops a slow hydrate that a newer one superseded", but
+    // the thing that supersedes it is sign-out itself, not a second account.
+    // Without resetLocal bumping hydrateSeq, this in-flight read's snapshot
+    // still matches the guard and repopulates the store the sign-out just
+    // cleared.
+    await useApp.getState().hydrate({ kind: "user", userId: "u1" });
+    await useApp.getState().addApplication({ company: "Acme", role: "Dev" });
+    useApp.setState({ ready: false });
+
+    const realLoadAll = repo.loadAll;
+    let call = 0;
+    let armed!: () => void;
+    const reachedFinalCall = new Promise<void>((resolve) => { armed = resolve; });
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const spy = vi.spyOn(repo, "loadAll").mockImplementation(async () => {
+      call++;
+      if (call === 1) return realLoadAll(); // ensureBaseline's own check (store.ts)
+      if (call === 2) {
+        // The real, final read — captured now, while u1's row still exists,
+        // so it genuinely reflects it. Only its return is delayed.
+        const real = await realLoadAll();
+        armed();
+        await gate;
+        return real;
+      }
+      return realLoadAll();
+    });
+
+    const slow = useApp.getState().hydrate({ kind: "user", userId: "u1" });
+    await reachedFinalCall; // u1's own read has resolved; only the return is held
+    useApp.getState().resetLocal(); // sign out mid-load
+    expect(useApp.getState().applications).toEqual([]);
+
+    release();
+    await slow;
+    spy.mockRestore();
+
+    // u1's stale snapshot resolved last. It must not have landed back in the
+    // just-cleared store, and the store must not have been marked ready by it.
+    expect(useApp.getState().applications).toEqual([]);
+    expect(useApp.getState().ready).toBe(false);
+  });
+
   it("resetLocal empties the store without deleting data", async () => {
     await useApp.getState().hydrate({ kind: "user", userId: "u1" });
     await useApp.getState().addApplication({ company: "Acme", role: "Dev" });

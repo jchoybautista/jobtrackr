@@ -89,4 +89,11 @@ describe("safeNextPath", () => {
     expect(safeNextPath("/login")).toBe("/");
     expect(safeNextPath("/signup")).toBe("/");
   });
+
+  it("still honours /reset-password, the recovery flow's own next", () => {
+    // /auth/confirm?next=%2Freset-password is how a password-recovery email
+    // reaches the reset form; it must survive this guard even though every
+    // other auth page is excluded above.
+    expect(safeNextPath("/reset-password")).toBe("/reset-password");
+  });
 });

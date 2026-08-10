@@ -9,11 +9,10 @@ const calls: string[] = [];
 const push = vi.fn(() => { calls.push("push"); });
 const signOut = vi.fn();
 const resetLocal = vi.fn(() => { calls.push("resetLocal"); });
-const getUser = vi.fn();
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
 vi.mock("@/lib/supabase/client", () => ({
-  createBrowserSupabase: () => ({ auth: { signOut, getUser } }),
+  createBrowserSupabase: () => ({ auth: { signOut } }),
 }));
 vi.mock("@/lib/store", () => ({ useApp: (sel: (s: unknown) => unknown) => sel({ resetLocal }) }));
 
@@ -21,17 +20,16 @@ beforeEach(() => {
   calls.length = 0;
   push.mockClear(); signOut.mockReset(); resetLocal.mockClear();
   signOut.mockImplementation(async () => { calls.push("signOut"); return { error: null }; });
-  getUser.mockResolvedValue({ data: { user: { email: "mika@example.com" } } });
 });
 
 describe("AccountMenu", () => {
   it("shows the signed-in email", async () => {
-    render(<AccountMenu />);
+    render(<AccountMenu email="mika@example.com" />);
     expect(await screen.findByText("mika@example.com")).toBeDefined();
   });
 
   it("signs out, clears the local store, and returns to login — in that order", async () => {
-    render(<AccountMenu />);
+    render(<AccountMenu email="mika@example.com" />);
     fireEvent.click(await screen.findByRole("button", { name: /sign out/i }));
 
     await waitFor(() => expect(calls).toContain("push"));
@@ -39,8 +37,7 @@ describe("AccountMenu", () => {
   });
 
   it("says Demo when there is no account", async () => {
-    getUser.mockResolvedValue({ data: { user: null } });
-    render(<AccountMenu />);
+    render(<AccountMenu email={null} />);
     expect(await screen.findByText(/demo/i)).toBeDefined();
     expect(screen.getByRole("link", { name: /create an account/i }).getAttribute("href")).toBe("/signup");
   });

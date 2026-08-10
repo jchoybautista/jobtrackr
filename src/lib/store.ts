@@ -145,6 +145,10 @@ export const useApp = create<AppState>()((set, get) => ({
   },
 
   resetLocal() {
+    // Bump the guard too: sign-out can land while a hydrate for the account
+    // being left is still in flight, and without this its snapshot resolves
+    // after the clear below and repopulates the store it just emptied.
+    hydrateSeq++;
     closeDb();
     set(() => ({
       stages: [], applications: [], tags: [], interviews: [], contacts: [],

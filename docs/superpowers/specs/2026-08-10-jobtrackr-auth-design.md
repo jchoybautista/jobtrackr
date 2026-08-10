@@ -79,7 +79,7 @@ Middleware does not intercept `/auth/*` at all — those handlers manage their o
 
 No Supabase user is created, so there is nothing to rate limit, reset, or clean up, and no MAU cost.
 
-The existing demo banner on the board gains a **"Create an account to keep this"** link to `/signup`. "Clear demo data" additionally drops the demo cookie and returns to `/login`.
+The existing demo banner on the board gains a **"Create an account"** link to `/signup`, alongside copy reading "…create an account to start tracking your own hunt." Legacy adoption only covers the un-namespaced `jobtrackr` database, so demo data never carries forward into a new account — the banner must not promise to "keep this" data, since it doesn't. "Clear demo data" additionally drops the demo cookie and returns to `/login`.
 
 Demo and account data never collide: they are different databases.
 

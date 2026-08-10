@@ -44,3 +44,25 @@ test("auth pages carry no app chrome", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByRole("navigation", { name: "Main menu" })).toHaveCount(0);
 });
+
+test("leaving the demo returns to sign in and stays there", async ({ page }) => {
+  // The spec asked for this and it was never written — which is exactly how
+  // sign-out came to leave the demo cookie behind, silently dropping the next
+  // visitor back into the sandbox instead of the sign-in page.
+  await page.goto("/login");
+  await page.getByRole("link", { name: /explore the demo/i }).click();
+  await expect(page.getByRole("heading", { name: "Board", exact: true })).toBeVisible();
+
+  await page.goto("/settings");
+  await page.getByRole("link", { name: /create an account/i }).click();
+  await expect(page).toHaveURL(/\/signup$/);
+
+  // Back to the demo, then clear it: the cookie must go with the data.
+  await page.goto("/");
+  await page.getByRole("button", { name: /clear demo data/i }).click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  // And the gate holds on a fresh navigation.
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/login$/);
+});

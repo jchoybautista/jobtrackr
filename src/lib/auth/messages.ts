@@ -18,7 +18,11 @@ const RULES: { match: RegExp; message: string }[] = [
   // Supabase phrases expired links several ways ("Token has expired", "Email
   // link is invalid or has expired"); all of them must reach the same copy, or
   // the reset flow tells people "something went wrong" for its commonest failure.
-  { match: /token has expired|invalid.*token|link is invalid|link has expired/i,
+  // Deliberately not `invalid.*token`: that also matches "Invalid Refresh Token:
+  // Refresh Token Not Found", a session error surfaced on the sign-in form, not
+  // an email-link failure — "invalid token" (adjacent words) keeps the match to
+  // the email-link phrasing only.
+  { match: /token has expired|invalid token|link is invalid|link has expired/i,
     message: "That link has expired. Request a new one." },
 ];
 

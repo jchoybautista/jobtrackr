@@ -1,38 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { useApp } from "@/lib/store";
-import { createBrowserSupabase } from "@/lib/supabase/client";
+import { useSignOut } from "./useSignOut";
 
-export function AccountMenu() {
-  const router = useRouter();
-  const resetLocal = useApp((s) => s.resetLocal);
-  const [email, setEmail] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    void createBrowserSupabase().auth.getUser().then(({ data }) => {
-      if (!alive) return;
-      setEmail(data.user?.email ?? null);
-      setLoaded(true);
-    });
-    return () => { alive = false; };
-  }, []);
-
-  async function onSignOut() {
-    await createBrowserSupabase().auth.signOut();
-    // Empty the store before navigating, or the next account briefly sees the
-    // previous one's board while its own data loads.
-    resetLocal();
-    router.push("/login");
-    router.refresh();
-  }
-
-  if (!loaded) return null;
+/** `email` is resolved server-side (see `resolveIdentity`) and threaded down
+ *  through AppShell — null means the demo sandbox, not "still loading". */
+export function AccountMenu({ email }: { email: string | null }) {
+  const signOut = useSignOut();
 
   if (!email) {
     return (
@@ -51,7 +26,7 @@ export function AccountMenu() {
   return (
     <div className="mt-auto border-t border-line pt-3">
       <p className="hidden truncate px-2 text-sm font-semibold text-ink-2 lg:block" title={email}>{email}</p>
-      <button type="button" onClick={onSignOut}
+      <button type="button" onClick={() => void signOut()}
         className="mt-1 flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2.5 text-base text-ink-2 hover:bg-sunken">
         <LogOut className="h-[18px] w-[18px] shrink-0" aria-hidden />
         <span className="hidden lg:inline">Sign out</span>

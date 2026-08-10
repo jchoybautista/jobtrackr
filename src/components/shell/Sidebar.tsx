@@ -16,7 +16,7 @@ export const NAV = [
   { href: "/settings", label: "Settings", short: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const reminders = useApp((s) => s.reminders);
   const dueCount = dueReminders(reminders, new Date().toISOString()).length;
@@ -54,7 +54,7 @@ export function Sidebar() {
           );
         })}
       </ul>
-      <AccountMenu />
+      <AccountMenu email={email} />
     </nav>
   );
 }

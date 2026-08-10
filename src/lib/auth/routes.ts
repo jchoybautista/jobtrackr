@@ -44,9 +44,15 @@ export function decideRoute({ path, hasSession, hasDemoCookie }: RouteContext): 
  * back. A protocol-relative value like "//evil.com" is a working open redirect
  * once it reaches router.push, so anything that is not plainly an in-app path
  * falls back to the board.
+ *
+ * Also used by `/auth/confirm`, whose own `next` is how the password-recovery
+ * flow reaches the reset form — `/reset-password` has to survive this guard
+ * (same reasoning as decideRoute's ALWAYS_OPEN) even though every other auth
+ * page is excluded below.
  */
 export function safeNextPath(raw: string | null): string {
   if (!raw) return "/";
+  if (raw === ALWAYS_OPEN) return raw;
   // Single leading slash only: "//" and "/\" are both protocol-relative.
   if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "/";
   if ((AUTH_PATHS as readonly string[]).includes(raw)) return "/";

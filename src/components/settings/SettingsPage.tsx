@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, Moon, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Download, LogOut, Moon, Trash2 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { toCsv } from "@/lib/exportio";
 import { PALETTE } from "@/lib/palette";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { SaveFooter } from "@/components/ui/SaveFooter";
 import { SortableList } from "@/components/ui/SortableList";
 import { toast } from "@/components/ui/Toast";
+import { useSignOut } from "@/components/shell/useSignOut";
 
 const input = "rounded-xl border border-line px-3 py-2 text-base";
 const card = "rounded-2xl border border-line-2 bg-surface p-5";
@@ -40,7 +42,36 @@ function download(filename: string, content: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-export function SettingsPage() {
+function AccountSection({ email }: { email: string | null }) {
+  const signOut = useSignOut();
+  return (
+    <section aria-label="Account" className={card}>
+      <h2 className="mb-3 text-base font-bold">Account</h2>
+      {email ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="min-w-0 truncate text-base text-ink-2">
+            Signed in as <span className="font-semibold text-ink">{email}</span>
+          </p>
+          <Button variant="secondary" className="h-11" onClick={() => void signOut()}>
+            <LogOut className="h-4 w-4" aria-hidden /> Sign out
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-base text-ink-2">
+            You&rsquo;re exploring the demo — no account yet.
+          </p>
+          <Link href="/signup"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-ink px-5 text-base font-semibold text-white hover:opacity-85">
+            Create an account
+          </Link>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function SettingsPage({ email }: { email: string | null }) {
   const s = useApp();
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   const [newStage, setNewStage] = useState("");
@@ -118,6 +149,8 @@ export function SettingsPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 px-5 pt-6 pb-10 lg:px-7">
       <h1 className="text-2xl font-extrabold tracking-tight">Settings</h1>
+
+      <AccountSection email={email} />
 
       <section aria-label="Pipeline" className={card}>
         <h2 className={h2}>Pipeline</h2>

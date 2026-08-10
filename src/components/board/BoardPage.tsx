@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, SlidersHorizontal, Search, Inbox, FilterX } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { computeNudges, dueReminders, filterApplications, upcomingInterviews } from "@/lib/selectors";
@@ -18,6 +19,7 @@ import { DetailPanel } from "@/components/detail/DetailPanel";
 
 export function BoardPage() {
   const s = useApp();
+  const router = useRouter();
   const nowIso = new Date().toISOString();
   const [addOpen, setAddOpen] = useState(false);
   const [quickAddStage, setQuickAddStage] = useState<string | undefined>(undefined);
@@ -111,7 +113,14 @@ export function BoardPage() {
               className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-3.5 text-sm font-semibold text-white hover:opacity-85">
               Create an account
             </Link>
-            <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={() => void s.clearDemo()}>
+            <Button variant="ghost" size="sm" className="whitespace-nowrap"
+              onClick={async () => {
+                // Leaving the sandbox mid-session — without this they can carry on
+                // entering real applications into a demo database they're already
+                // locked out of, stranding the data in jobtrackr-demo.
+                await s.clearDemo();
+                router.push("/login");
+              }}>
               Clear demo data
             </Button>
           </div>
