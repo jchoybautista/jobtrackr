@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { DEMO_COOKIE } from "./routes";
@@ -19,7 +20,7 @@ export interface Identity {
  * or failed round trip flashes the wrong identity at someone who is already
  * signed in.
  */
-export async function resolveIdentity(): Promise<Identity | null> {
+export const resolveIdentity = cache(async (): Promise<Identity | null> => {
   const supabase = await createServerSupabase();
   const { data } = await supabase.auth.getUser();
   if (data.user) {
@@ -28,4 +29,6 @@ export async function resolveIdentity(): Promise<Identity | null> {
 
   const store = await cookies();
   return store.has(DEMO_COOKIE) ? { scope: { kind: "demo" }, email: null } : null;
-}
+  // cache(): /settings resolves this in both the layout and the page, and
+  // without memoization that is two Supabase round trips for one render.
+});

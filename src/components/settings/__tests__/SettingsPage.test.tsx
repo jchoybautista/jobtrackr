@@ -107,3 +107,20 @@ describe("Settings tags and preferences", () => {
     expect(ghostInput.value).toBe("14");
   });
 });
+
+describe("Settings account section", () => {
+  it("shows who you are signed in as, with a way out", () => {
+    render(<SettingsPage email="mika@example.com" />);
+    const account = screen.getByRole("region", { name: "Account" });
+    expect(account.textContent).toContain("mika@example.com");
+    expect(screen.getByRole("button", { name: /sign out/i })).toBeDefined();
+  });
+
+  it("offers an account instead when exploring the demo", () => {
+    render(<SettingsPage email={null} />);
+    const account = screen.getByRole("region", { name: "Account" });
+    expect(account.textContent).toMatch(/exploring the demo/i);
+    expect(screen.queryByRole("button", { name: /sign out/i })).toBeNull();
+    expect(account.querySelector('a[href="/signup"]')).not.toBeNull();
+  });
+});

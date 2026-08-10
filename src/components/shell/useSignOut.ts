@@ -14,7 +14,15 @@ export function useSignOut() {
   const resetLocal = useApp((s) => s.resetLocal);
 
   return async function signOut() {
-    await createBrowserSupabase().auth.signOut();
+    // Never let a network failure trap someone in a session they asked to
+    // leave: clearing local state and navigating must happen regardless. The
+    // server cookie is already gone or will expire; what matters here is that
+    // this browser stops showing the account's data.
+    try {
+      await createBrowserSupabase().auth.signOut();
+    } catch {
+      /* offline or Supabase unreachable — carry on with the local sign-out */
+    }
     // Scope resolution puts an account ahead of the demo cookie, so this never
     // mattered while signed in — but leaving it behind means the next visitor
     // on this browser drops straight back into the demo sandbox instead of

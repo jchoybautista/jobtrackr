@@ -49,12 +49,23 @@ test("leaving the demo returns to sign in and stays there", async ({ page }) => 
   // The spec asked for this and it was never written — which is exactly how
   // sign-out came to leave the demo cookie behind, silently dropping the next
   // visitor back into the sandbox instead of the sign-in page.
+  //
+  // Narrow viewport deliberately: it hides the sidebar, so the account surface
+  // under test can only be the one on Settings — the mobile path, which had no
+  // sign-out at all until the final review. At desktop width the sidebar's own
+  // link resolves first and this would silently exercise the wrong element.
+  await page.setViewportSize({ width: 390, height: 844 });
+
   await page.goto("/login");
   await page.getByRole("link", { name: /explore the demo/i }).click();
   await expect(page.getByRole("heading", { name: "Board", exact: true })).toBeVisible();
 
   await page.goto("/settings");
-  await page.getByRole("link", { name: /create an account/i }).click();
+  const account = page.getByRole("region", { name: "Account" });
+  await expect(account).toBeVisible();
+  // Scoped to the section, so this cannot silently resolve to the sidebar's
+  // own account link the way an unscoped locator did.
+  await account.getByRole("link", { name: /create an account/i }).click();
   await expect(page).toHaveURL(/\/signup$/);
 
   // Back to the demo, then clear it: the cookie must go with the data.
