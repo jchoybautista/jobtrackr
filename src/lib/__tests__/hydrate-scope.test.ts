@@ -51,12 +51,28 @@ describe("hydrate(scope)", () => {
   });
 
   it("drops a slow hydrate that a newer one superseded", async () => {
-    // u1's read is still in flight when u2 signs in; u1's snapshot must not
-    // land in u2's UI.
+    // u1's load is still in flight when u2 signs in. Held deterministically by
+    // gating the migration step, because relying on natural async ordering
+    // lets this pass with the guard removed.
+    await useApp.getState().hydrate({ kind: "user", userId: "u1" });
+    await useApp.getState().addApplication({ company: "Acme", role: "Dev" });
+
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const spy = vi.spyOn(legacy, "adoptLegacyDatabase")
+      .mockImplementationOnce(async () => { await gate; return "skipped"; });
+
     const slow = useApp.getState().hydrate({ kind: "user", userId: "u1" });
-    const fresh = useApp.getState().hydrate({ kind: "user", userId: "u2" });
-    await Promise.all([slow, fresh]);
+    await useApp.getState().hydrate({ kind: "user", userId: "u2" });
+    expect(useApp.getState().applications).toEqual([]);   // u2's empty board
+
+    release();
+    await slow;
+    spy.mockRestore();
+
+    // u1's snapshot resolved last. It must not have landed in u2's UI.
     expect(currentDb().name).toBe("jobtrackr-u2");
+    expect(useApp.getState().applications).toEqual([]);
   });
 
   it("resetLocal empties the store without deleting data", async () => {
