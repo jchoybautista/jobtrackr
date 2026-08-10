@@ -15,7 +15,7 @@ export function SaveFooter({ dirty, onSave, onCancel, className = "" }: {
   return (
     <div className={`flex items-center justify-between gap-3 border-t border-line-2 bg-surface px-6 py-3 ${className}`}>
       <p role="status" aria-live="polite"
-        className={`text-xs font-semibold ${dirty ? "text-ink" : "text-ink-3"}`}>
+        className={`text-sm font-semibold ${dirty ? "text-ink" : "text-ink-3"}`}>
         {dirty ? "● Unsaved changes" : "No changes"}
       </p>
       <div className="flex shrink-0 items-center gap-2">

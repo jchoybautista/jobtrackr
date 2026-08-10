@@ -9,7 +9,7 @@
   --color-ink-2: #595959;
   --color-ink-3: #6b6b6b;
   --color-line: #e5e5e5;
-  --color-line-2: #f0f0f0;
+  --color-line-2: #e1e1e1f0;
   --color-danger: #b34540;
   --color-danger-bg: #fdecec;
   --color-success: #3e7a50;
@@ -36,4 +36,22 @@ body { background: var(--color-canvas); color: var(--color-ink); -webkit-font-sm
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Auth hero: cards settle into the funnel on load. Motion is ambient, so it
+   is dropped entirely rather than shortened when reduced motion is asked for. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Demo-link pointer: nudges right and back, nonstop, to draw the eye to the
+   "Explore the demo instead" link. Collapsed to a single still frame by the
+   prefers-reduced-motion rule above. */
+@keyframes nudge-x {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(5px); }
+}
+.icon-nudge {
+  animation: nudge-x 1.3s ease-in-out infinite;
 }

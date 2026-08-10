@@ -38,7 +38,7 @@ export function SectionRail({ sections, onChange }: {
                 ? <Eye className="h-4 w-4" aria-hidden />
                 : <EyeOff className="h-4 w-4" aria-hidden />}
             </button>
-            <span className={`flex-1 truncate text-sm ${s.visible ? "font-semibold text-ink" : "text-ink-3"}`}>
+            <span className={`flex-1 truncate text-base ${s.visible ? "font-semibold text-ink" : "text-ink-3"}`}>
               {label}
             </span>
           </>

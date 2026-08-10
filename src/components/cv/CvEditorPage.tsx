@@ -11,7 +11,7 @@ import { CvToolbar } from "./CvToolbar";
 import { CvPreview } from "./CvPreview";
 
 const backLink =
-  "inline-flex items-center gap-1.5 rounded-full text-xs font-semibold text-ink-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-ink";
+  "inline-flex items-center gap-1.5 rounded-full text-sm font-semibold text-ink-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-ink";
 
 export function CvEditorPage({ id }: { id: string }) {
   const cv = useApp((s) => s.cvdocs.find((c) => c.id === id));
@@ -50,7 +50,7 @@ export function CvEditorPage({ id }: { id: string }) {
       <div className="mx-auto max-w-md px-5 pt-16 text-center">
         <FileQuestion className="mx-auto mb-3 h-8 w-8 text-ink-3" aria-hidden />
         <h1 className="text-lg font-bold">CV not found</h1>
-        <p className="mx-auto mt-1 mb-5 max-w-xs text-sm text-ink-3">
+        <p className="mx-auto mt-1 mb-5 max-w-xs text-base text-ink-3">
           This CV doesn’t exist or was deleted.
         </p>
         <Link href="/cv" className={backLink}>
@@ -92,14 +92,14 @@ export function CvEditorPage({ id }: { id: string }) {
             document changes (Task 8 review requirement). */}
         <div key={cv.id} className="flex flex-col gap-8">
           <section aria-label="Contact details" className="flex flex-col gap-4">
-            <h2 className="text-sm font-bold text-ink">Contact details</h2>
+            <h2 className="text-base font-bold text-ink">Contact details</h2>
             <ContactForm content={content} onChange={handleContent} />
           </section>
 
           <section aria-label="Sections" className="flex flex-col gap-3">
             <div>
-              <h2 className="text-sm font-bold text-ink">Sections</h2>
-              <p className="text-xs text-ink-3">Toggle visibility and reorder how they appear.</p>
+              <h2 className="text-base font-bold text-ink">Sections</h2>
+              <p className="text-sm text-ink-3">Toggle visibility and reorder how they appear.</p>
             </div>
             <SectionRail sections={cv.sections} onChange={handleSections} />
           </section>
@@ -108,7 +108,7 @@ export function CvEditorPage({ id }: { id: string }) {
             const Form = CONTENT_FORMS[key];
             return (
               <section key={key} aria-label={SECTION_LABELS[key]} className="flex flex-col gap-4">
-                <h2 className="text-sm font-bold text-ink">{SECTION_LABELS[key]}</h2>
+                <h2 className="text-base font-bold text-ink">{SECTION_LABELS[key]}</h2>
                 <Form content={content} onChange={handleContent} />
               </section>
             );
