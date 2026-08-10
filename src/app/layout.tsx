@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { AppShell } from "@/components/shell/AppShell";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -42,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <a href="#main" className="skip-link">Skip to main content</a>
-        <AppShell>{children}</AppShell>
+        {children}
       </body>
     </html>
   );
