@@ -18,6 +18,7 @@ import { needsMigration, migrateSnapshot } from "./migrate";
 import { applyFurthestOnMove } from "./furthest";
 import { setScope, closeDb, type DbScope } from "./db";
 import { adoptLegacyDatabase } from "./legacy";
+import { DEMO_COOKIE } from "./auth/routes";
 
 const nowIso = () => new Date().toISOString();
 
@@ -441,6 +442,11 @@ export const useApp = create<AppState>()((set, get) => ({
 
   async clearDemo() {
     await clearDemoData();
+    // Leaving the demo means leaving demo mode; without this the cookie keeps
+    // waving the visitor past the sign-in page forever.
+    if (typeof document !== "undefined") {
+      document.cookie = `${DEMO_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+    }
     const snap = await repo.loadAll();
     set(() => ({ ...snap }));
   },

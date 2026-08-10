@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Plus, SlidersHorizontal, Search, Inbox, FilterX } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { computeNudges, dueReminders, filterApplications, upcomingInterviews } from "@/lib/selectors";
@@ -102,8 +103,18 @@ export function BoardPage() {
 
       {s.settings.demo && (
         <div className="mb-4 flex flex-col items-start gap-1 rounded-2xl border border-line bg-surface px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <p className="text-sm text-ink-2">You&rsquo;re looking at demo data — clear it when you&rsquo;re ready to track your own hunt.</p>
-          <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={() => void s.clearDemo()}>Clear demo data</Button>
+          <p className="text-sm text-ink-2">
+            You&rsquo;re looking at demo data — create an account to start tracking your own hunt.
+          </p>
+          <div className="flex items-center gap-1">
+            <Link href="/signup"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-3.5 text-sm font-semibold text-white hover:opacity-85">
+              Create an account
+            </Link>
+            <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={() => void s.clearDemo()}>
+              Clear demo data
+            </Button>
+          </div>
         </div>
       )}
 
