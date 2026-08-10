@@ -2,16 +2,22 @@
 
 import { useEffect } from "react";
 import { useApp } from "@/lib/store";
+import type { DbScope } from "@/lib/db";
 import { Sidebar } from "./Sidebar";
 import { MobileTabs } from "./MobileTabs";
 import { Toaster } from "@/components/ui/Toast";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ scope, children }: { scope: DbScope; children: React.ReactNode }) {
   const ready = useApp((s) => s.ready);
   const persistBroken = useApp((s) => s.persistBroken);
   const hydrate = useApp((s) => s.hydrate);
 
-  useEffect(() => { void hydrate(); }, [hydrate]);
+  const scopeKey = scope.kind === "demo" ? "demo" : scope.userId;
+  useEffect(() => { void hydrate(scope); },
+    // Re-hydrating on identity change is the point; the object identity of
+    // `scope` changes on every render, so key off its contents.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hydrate, scopeKey]);
 
   return (
     <div className="flex min-h-dvh">
