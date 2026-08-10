@@ -2,9 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AccountMenu } from "@/components/shell/AccountMenu";
 
-const push = vi.fn();
+// Recorded in one array so the ORDER is assertable, not just the calls.
+// resetLocal must land before navigation or the next account sees the previous
+// account's board flash while its own data loads.
+const calls: string[] = [];
+const push = vi.fn(() => { calls.push("push"); });
 const signOut = vi.fn();
-const resetLocal = vi.fn();
+const resetLocal = vi.fn(() => { calls.push("resetLocal"); });
 const getUser = vi.fn();
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
@@ -14,7 +18,9 @@ vi.mock("@/lib/supabase/client", () => ({
 vi.mock("@/lib/store", () => ({ useApp: (sel: (s: unknown) => unknown) => sel({ resetLocal }) }));
 
 beforeEach(() => {
+  calls.length = 0;
   push.mockClear(); signOut.mockReset(); resetLocal.mockClear();
+  signOut.mockImplementation(async () => { calls.push("signOut"); return { error: null }; });
   getUser.mockResolvedValue({ data: { user: { email: "mika@example.com" } } });
 });
 
@@ -24,16 +30,12 @@ describe("AccountMenu", () => {
     expect(await screen.findByText("mika@example.com")).toBeDefined();
   });
 
-  it("signs out, clears the local store, and returns to login", async () => {
-    signOut.mockResolvedValue({ error: null });
+  it("signs out, clears the local store, and returns to login — in that order", async () => {
     render(<AccountMenu />);
     fireEvent.click(await screen.findByRole("button", { name: /sign out/i }));
 
-    await waitFor(() => expect(signOut).toHaveBeenCalled());
-    // Order matters: the store must be emptied so the next account never sees
-    // the previous one's board flash on screen.
-    await waitFor(() => expect(resetLocal).toHaveBeenCalled());
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+    await waitFor(() => expect(calls).toContain("push"));
+    expect(calls).toEqual(["signOut", "resetLocal", "push"]);
   });
 
   it("says Demo when there is no account", async () => {
