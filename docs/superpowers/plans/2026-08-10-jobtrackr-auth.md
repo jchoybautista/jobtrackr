@@ -2239,7 +2239,7 @@ export function LoginForm() {
           </Link>
         </div>
 
-        <Button type="submit" disabled={busy} aria-busy={busy} className="w-full">
+        <Button type="submit" disabled={busy} aria-busy={busy} className="h-11 w-full">
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>
@@ -2581,9 +2581,13 @@ export function SignupForm() {
           error={errors.email} autoComplete="email" required autoFocus />
         <AuthField id="password" label="Password" type="password" value={password} onChange={setPassword}
           error={errors.password} autoComplete="new-password" required />
-        <p className="mb-5 -mt-2 text-sm text-ink-3">At least 8 characters.</p>
+        {/* The hint gives way to the error: two lines both saying "at least 8
+            characters" is noise, and the error is the one that matters. */}
+        {!errors.password && (
+          <p className="mb-5 -mt-2 text-sm text-ink-3">At least 8 characters.</p>
+        )}
 
-        <Button type="submit" disabled={busy} aria-busy={busy} className="w-full">
+        <Button type="submit" disabled={busy} aria-busy={busy} className="h-11 w-full">
           {busy ? "Creating account…" : "Create account"}
         </Button>
       </form>
@@ -2785,7 +2789,7 @@ export function ForgotPasswordForm() {
         )}
         <AuthField id="email" label="Email" type="email" value={email} onChange={setEmail}
           error={errors.email} autoComplete="email" required autoFocus />
-        <Button type="submit" disabled={busy} aria-busy={busy} className="w-full">
+        <Button type="submit" disabled={busy} aria-busy={busy} className="h-11 w-full">
           {busy ? "Sending…" : "Send reset link"}
         </Button>
       </form>
@@ -2903,8 +2907,12 @@ export function ResetPasswordForm() {
         )}
         <AuthField id="password" label="New password" type="password" value={password} onChange={setPassword}
           error={errors.password} autoComplete="new-password" required autoFocus />
-        <p className="mb-5 -mt-2 text-sm text-ink-3">At least 8 characters.</p>
-        <Button type="submit" disabled={busy} aria-busy={busy} className="w-full">
+        {/* The hint gives way to the error: two lines both saying "at least 8
+            characters" is noise, and the error is the one that matters. */}
+        {!errors.password && (
+          <p className="mb-5 -mt-2 text-sm text-ink-3">At least 8 characters.</p>
+        )}
+        <Button type="submit" disabled={busy} aria-busy={busy} className="h-11 w-full">
           {busy ? "Saving…" : "Update password"}
         </Button>
       </form>
