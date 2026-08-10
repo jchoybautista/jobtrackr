@@ -56,3 +56,39 @@ describe("decideRoute", () => {
       .toEqual({ action: "redirect", to: "/login?next=%2Fcv%2Fdemo-cv-2" });
   });
 });
+
+import { safeNextPath } from "@/lib/auth/routes";
+
+describe("safeNextPath", () => {
+  it("keeps an ordinary in-app path", () => {
+    expect(safeNextPath("/dashboard")).toBe("/dashboard");
+    expect(safeNextPath("/cv/demo-cv-2")).toBe("/cv/demo-cv-2");
+  });
+
+  it("falls back to the board when there is no next param", () => {
+    expect(safeNextPath(null)).toBe("/");
+    expect(safeNextPath("")).toBe("/");
+  });
+
+  it("refuses a protocol-relative URL", () => {
+    // The open-redirect vector: router.push("//evil.com") leaves the site.
+    expect(safeNextPath("//evil.com")).toBe("/");
+    expect(safeNextPath("/\\evil.com")).toBe("/");
+  });
+
+  it("refuses an absolute URL", () => {
+    expect(safeNextPath("https://evil.com")).toBe("/");
+    expect(safeNextPath("javascript:alert(1)")).toBe("/");
+  });
+
+  it("refuses anything not rooted at a single slash", () => {
+    expect(safeNextPath("dashboard")).toBe("/");
+    expect(safeNextPath("../etc/passwd")).toBe("/");
+  });
+
+  it("does not bounce a signed-in user back to an auth page", () => {
+    // Landing on /login straight after signing in reads as a failed sign-in.
+    expect(safeNextPath("/login")).toBe("/");
+    expect(safeNextPath("/signup")).toBe("/");
+  });
+});

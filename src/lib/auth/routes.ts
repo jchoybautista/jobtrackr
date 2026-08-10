@@ -36,3 +36,19 @@ export function decideRoute({ path, hasSession, hasDemoCookie }: RouteContext): 
   const to = path === "/" ? "/login" : `/login?next=${encodeURIComponent(path)}`;
   return { action: "redirect", to };
 }
+
+/**
+ * Where to land after signing in, given an untrusted `next` param.
+ *
+ * decideRoute encodes this value on the way out; nothing guarantees what comes
+ * back. A protocol-relative value like "//evil.com" is a working open redirect
+ * once it reaches router.push, so anything that is not plainly an in-app path
+ * falls back to the board.
+ */
+export function safeNextPath(raw: string | null): string {
+  if (!raw) return "/";
+  // Single leading slash only: "//" and "/\" are both protocol-relative.
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "/";
+  if ((AUTH_PATHS as readonly string[]).includes(raw)) return "/";
+  return raw;
+}
