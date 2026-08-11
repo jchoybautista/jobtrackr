@@ -3,25 +3,6 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { decideRoute, DEMO_COOKIE } from "@/lib/auth/routes";
 
 export async function middleware(request: NextRequest) {
-  // TEMPORARY DIAGNOSTIC — remove once the Vercel env issue is settled.
-  // Reports only presence, never values. Runs before updateSession so it
-  // answers even while the env check is throwing.
-  if (request.nextUrl.searchParams.has("__envcheck")) {
-    const dynamic = (name: string) => process.env[name];
-    return NextResponse.json({
-      // Static access: Next replaces this with a literal at build time.
-      staticUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? "set" : "unset",
-      staticKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "set" : "unset",
-      // Dynamic access: only satisfied by the runtime environment.
-      dynamicUrl: dynamic("NEXT_PUBLIC_SUPABASE_URL") ? "set" : "unset",
-      dynamicKey: dynamic("NEXT_PUBLIC_SUPABASE_ANON_KEY") ? "set" : "unset",
-      publicKeysVisible: Object.keys(process.env).filter((k) =>
-        k.startsWith("NEXT_PUBLIC"),
-      ),
-      vercelEnv: process.env.VERCEL_ENV ?? "none",
-    });
-  }
-
   const { response, hasSession } = await updateSession(request);
 
   // decideRoute matches auth paths by exact equality, so "/login/" would slip
