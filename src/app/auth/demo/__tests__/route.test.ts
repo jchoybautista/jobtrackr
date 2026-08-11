@@ -21,7 +21,17 @@ describe("GET /auth/demo", () => {
     const cookie = res.cookies.get(DEMO_COOKIE);
     expect(cookie?.value).toBe("1");
     expect(cookie?.sameSite).toBe("lax");
-    expect(cookie?.maxAge).toBe(60 * 60 * 24 * 30);
+  });
+
+  it("scopes the demo cookie to the browser session", async () => {
+    // A persistent cookie made the sign-in page unreachable on later visits:
+    // demo silently resumed and dropped returning visitors straight onto the
+    // board. Omitting maxAge/expires means the demo lasts exactly as long as
+    // the browser stays open, so sign-in is what a fresh visit lands on.
+    const cookie = (await GET(new Request("http://localhost:3000/auth/demo")))
+      .cookies.get(DEMO_COOKIE);
+    expect(cookie?.maxAge).toBeUndefined();
+    expect(cookie?.expires).toBeUndefined();
   });
 
   it("does not make the cookie httpOnly — it grants only a local sandbox", async () => {

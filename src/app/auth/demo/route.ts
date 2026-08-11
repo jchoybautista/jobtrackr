@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { DEMO_COOKIE } from "@/lib/auth/routes";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-export const DEMO_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
-
 export async function GET(request: Request) {
   const response = NextResponse.redirect(new URL("/", request.url));
 
@@ -16,7 +14,9 @@ export async function GET(request: Request) {
   response.cookies.set({
     name: DEMO_COOKIE,
     value: "1",
-    maxAge: DEMO_COOKIE_MAX_AGE,
+    // No maxAge/expires: a session cookie. A persistent one made sign-in
+    // unreachable — a returning visitor was dropped straight onto the board
+    // with no indication why, and (until AccountMenu grew an exit) no way back.
     sameSite: "lax",
     path: "/",
     secure: process.env.NODE_ENV === "production",

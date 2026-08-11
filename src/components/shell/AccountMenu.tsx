@@ -19,6 +19,14 @@ export function AccountMenu({ email }: { email: string | null }) {
           <span className="lg:hidden" aria-hidden>+</span>
           <span className="sr-only lg:hidden">Create an account</span>
         </Link>
+        {/* The demo cookie is the only thing standing between a visitor and the
+            sign-in page, so the sandbox has to own a way out of itself. */}
+        <button type="button" onClick={() => void signOut()}
+          className="mt-1 flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2.5 text-base text-ink-2 hover:bg-sunken">
+          <LogOut className="h-[18px] w-[18px] shrink-0" aria-hidden />
+          <span className="hidden lg:inline">Exit demo</span>
+          <span className="sr-only lg:hidden">Exit demo</span>
+        </button>
       </div>
     );
   }
