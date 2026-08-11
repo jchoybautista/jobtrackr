@@ -5,7 +5,7 @@ interview tracking, insights, and a built-in CV builder. Your data stays in
 your browser, scoped to your account — sign in from another device and it
 isn't there; that's by design, cloud sync is next.
 
-**[Live demo →](https://jobtrackr-seven-liard.vercel.app)**
+**[Live demo →](https://jobtrackr-9mqd.vercel.app)**
 
 ![JobTrackr board](docs/screenshots/board.png)
 
