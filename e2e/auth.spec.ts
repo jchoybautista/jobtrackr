@@ -14,10 +14,9 @@ test("the demo link opens the app with seeded data and no account", async ({ pag
   await expect(page.getByRole("heading", { name: "Board", exact: true })).toBeVisible();
   // The seeded dataset is there.
   await expect(page.getByText("Stripe").first()).toBeVisible();
-  // And the banner offers the way out of demo mode. Not name-matched to a
-  // single locator: the AccountMenu and the demo-mode banner both expose a
-  // "Create an account" link on this page, so take the first.
-  await expect(page.getByRole("link", { name: /create an account/i }).first()).toBeVisible();
+  // And the sidebar offers the way out of demo mode — the only "Create an
+  // account" link on the page since the board banner stopped duplicating it.
+  await expect(page.getByRole("link", { name: /create an account/i })).toBeVisible();
 });
 
 test("the demo survives a reload", async ({ page }) => {

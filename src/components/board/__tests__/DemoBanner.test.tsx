@@ -16,10 +16,13 @@ vi.mock("@/lib/store", () => ({
 }));
 
 describe("demo banner", () => {
-  it("offers a route to a real account", () => {
+  it("mentions creating an account without duplicating the sidebar's link", () => {
+    // The sidebar's AccountMenu already carries a "Create an account" link
+    // beside "Exit demo" — this banner repeated it right next to the same
+    // control, so the banner keeps only the copy, not a second CTA.
     render(<BoardPage />);
-    const cta = screen.getByRole("link", { name: /create an account/i });
-    expect(cta.getAttribute("href")).toBe("/signup");
+    expect(screen.getByText(/create an account to start tracking/i)).toBeDefined();
+    expect(screen.queryByRole("link", { name: /create an account/i })).toBeNull();
   });
 
   it("still offers to clear the demo data", () => {

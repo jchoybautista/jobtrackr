@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, SlidersHorizontal, Search, Inbox, FilterX } from "lucide-react";
 import { useApp } from "@/lib/store";
@@ -108,22 +107,18 @@ export function BoardPage() {
           <p className="text-sm text-ink-2">
             You&rsquo;re looking at demo data — create an account to start tracking your own hunt.
           </p>
-          <div className="flex items-center gap-1">
-            <Link href="/signup"
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-3.5 text-sm font-semibold text-white hover:opacity-85">
-              Create an account
-            </Link>
-            <Button variant="ghost" size="sm" className="whitespace-nowrap"
-              onClick={async () => {
-                // Leaving the sandbox mid-session — without this they can carry on
-                // entering real applications into a demo database they're already
-                // locked out of, stranding the data in jobtrackr-demo.
-                await s.clearDemo();
-                router.push("/login");
-              }}>
-              Clear demo data
-            </Button>
-          </div>
+          {/* "Create an account" now lives once, in the sidebar's AccountMenu —
+              this banner repeated it right next to it. */}
+          <Button variant="ghost" size="sm" className="whitespace-nowrap"
+            onClick={async () => {
+              // Leaving the sandbox mid-session — without this they can carry on
+              // entering real applications into a demo database they're already
+              // locked out of, stranding the data in jobtrackr-demo.
+              await s.clearDemo();
+              router.push("/login");
+            }}>
+            Clear demo data
+          </Button>
         </div>
       )}
 
