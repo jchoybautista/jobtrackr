@@ -83,10 +83,6 @@ const SPECS: DemoSpec[] = [
     salaryMin: 120000, salaryMax: 140000, currency: "USD", tagIds: ["tag-dream"],
     url: "https://stripe.com/jobs", furthestStageId: "stage-screening",
     jdSnapshot: "Design payment experiences used by millions of businesses. You'll partner with engineers on Checkout and Billing surfaces, from early exploration through shipped detail." },
-  { key: "grammarly", company: "Grammarly", role: "Web Platform Engineer", stageId: "stage-screening",
-    created: 19, applied: 15, silent: 9, location: "Remote · EU", workMode: "remote",
-    source: "Wellfound", salaryMin: 150000, salaryMax: 180000, currency: "USD",
-    furthestStageId: "stage-screening" },
   // Ghosted: silent past the 14-day window
   { key: "coinbase", company: "Coinbase", role: "Software Engineer II", stageId: "stage-screening",
     created: 30, applied: 27, silent: 17, location: "Remote", workMode: "remote", source: "Indeed",
@@ -101,14 +97,6 @@ const SPECS: DemoSpec[] = [
     created: 15, applied: 12, silent: 2, location: "Manila", workMode: "onsite", source: "JobStreet",
     salaryMin: 160000, salaryMax: 210000, currency: "PHP", tagIds: ["tag-high"],
     furthestStageId: "stage-interview" },
-  { key: "twilio", company: "Twilio", role: "UI Engineer", stageId: "stage-interview",
-    created: 21, applied: 18, silent: 5, location: "Remote", workMode: "remote",
-    source: "Recruiter email", salaryMin: 155000, salaryMax: 185000, currency: "USD",
-    tagIds: ["tag-remote"], furthestStageId: "stage-interview" },
-  { key: "gitlab", company: "GitLab", role: "Senior Frontend Engineer", stageId: "stage-interview",
-    created: 33, applied: 29, silent: 8, location: "Remote", workMode: "remote",
-    source: "Company site", salaryMin: 165000, salaryMax: 200000, currency: "USD",
-    tagIds: ["tag-remote"], furthestStageId: "stage-interview" },
   // Ghosted after a promising panel
   { key: "cloudflare", company: "Cloudflare", role: "Systems Engineer", stageId: "stage-interview",
     created: 38, applied: 34, silent: 16, location: "Austin · Hybrid", workMode: "hybrid",
@@ -248,9 +236,7 @@ function buildInterviews(now: Date): Interview[] {
     ["netflix", "final", 1, "Onsite · Los Gatos", "Four back-to-back sessions, lunch with the team in between."],
     ["datadog", "technical", 4, "Zoom", "Frontend performance deep-dive."],
     ["notion", "final", 5, "Zoom · with VP Engineering", "Values + scope conversation. Prepare questions about roadmap."],
-    ["twilio", "panel", 6, "Google Meet", "Three engineers, 60m, mostly component API design."],
     ["discord", "final", 8, "Zoom", "Final loop with the desktop client team."],
-    ["gitlab", "technical", 12, "GitLab handbook exercise", "Async take-home, 4h budget."],
     ["ramp", "technical", 14, "CodeSignal", "Timed assessment, 90 minutes."],
     // Already happened
     ["stripe", "phone", -4, "Phone · recruiter screen"],
@@ -285,9 +271,7 @@ const CONTACTS: [key: string, name: string, role: string, email: string, linkedi
   ["discord", "Elena Vasquez", "Engineering Manager", "elena.v@example.com"],
   ["datadog", "Chris Mbeki", "Recruiter", "chris.mbeki@example.com"],
   ["ramp", "Hannah Reyes", "Referral · college friend", "hannah.reyes@example.com"],
-  ["gitlab", "Otto Lindqvist", "Talent Acquisition", "otto.l@example.com"],
   ["xendit", "Bea Salonga", "People Partner", "bea.salonga@example.com"],
-  ["twilio", "Nadia Farouk", "Sourcer", "nadia.farouk@example.com"],
 ];
 
 const NOTES: [key: string, ageDays: number, body: string][] = [
@@ -306,7 +290,6 @@ const NOTES: [key: string, ageDays: number, body: string][] = [
   ["grab", 12, "Rejected after the technical. Feedback: strong on product thinking, thin on Swift specifics. Fair."],
   ["google", 14, "Rejected at screening — the req was closed and folded into another team. Recruiter offered to resurface me in Q4."],
   ["meta", 22, "Two rounds in, then a rejection email with no detail. Standard."],
-  ["gitlab", 8, "Async take-home has a 4h budget but the brief looks like 8h of work. Scope it deliberately and write down what I'd do with more time."],
 ];
 
 function buildNotes(now: Date): NoteDoc[] {
@@ -338,8 +321,8 @@ function buildReminders(now: Date): Reminder[] {
     { id: "demo-rem-8", applicationId: A("xendit"), type: "follow_up",
       title: "Ask Xendit about the relocation package", dueAt: daysAhead(now, 6), done: false },
     // Snoozed out of the due list for now
-    { id: "demo-rem-9", applicationId: A("grammarly"), type: "follow_up",
-      title: "Follow up with Grammarly", dueAt: daysAgo(now, 5), done: false,
+    { id: "demo-rem-9", applicationId: A("linear"), type: "follow_up",
+      title: "Nudge Linear again", dueAt: daysAgo(now, 5), done: false,
       snoozedUntil: daysAhead(now, 3) },
     { id: "demo-rem-10", type: "custom",
       title: "Refresh the portfolio case study", dueAt: daysAgo(now, 6), done: true },

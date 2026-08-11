@@ -94,7 +94,7 @@ export function LoginForm() {
 
       <div className="mt-5 border-t border-line pt-4 text-center">
         <Link href="/auth/demo" className="inline-flex min-h-11 items-center justify-center gap-3 text-sm font-semibold text-ink underline">
-          <PointingHandIcon className="icon-nudge h-6 w-6 shrink-0 text-ink" aria-hidden />
+          <PointingHandIcon className="icon-nudge h-8 w-8 shrink-0 text-ink" aria-hidden />
           Explore the demo instead
         </Link>
         <p className="mt-1 text-sm text-ink-3">No account needed.</p>
