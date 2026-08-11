@@ -11,14 +11,19 @@ import {
 import { CONTENT_FORMS, ContactForm } from "./content-forms";
 import { PhotoUpload } from "./PhotoUpload";
 
-export function ProfileEditorPage() {
+export function ProfileEditorPage({ accountEmail }: { accountEmail: string | null }) {
   const profile = useApp((s) => s.profile);
   const saveProfile = useApp((s) => s.saveProfile);
   const [savedFlash, setSavedFlash] = useState(false);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Live view of the master content — uncontrolled fields commit on blur.
-  const content = profile?.content ?? emptyCvContent();
+  // Nobody has saved a profile yet: default to only what account creation
+  // actually collected (an email), not the fuller shape a saved profile has.
+  // Once anything is saved, `content` comes from `profile` from then on, so
+  // this never overwrites a real edit — including a deliberately blanked email.
+  const content = profile?.content ??
+    { ...emptyCvContent(), ...(accountEmail ? { email: accountEmail } : {}) };
 
   function handleChange(patch: Partial<CvContent>) {
     void saveProfile({ ...content, ...patch });

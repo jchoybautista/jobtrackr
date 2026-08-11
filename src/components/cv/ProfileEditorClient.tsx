@@ -13,4 +13,6 @@ const Editor = dynamic(() => import("./ProfileEditorPage").then((m) => m.Profile
   ),
 });
 
-export const ProfileEditorClient = () => <Editor />;
+export const ProfileEditorClient = ({ accountEmail }: { accountEmail: string | null }) => (
+  <Editor accountEmail={accountEmail} />
+);

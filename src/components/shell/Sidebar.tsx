@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, KanbanSquare, Table2, FileText, Bell, Settings } from "lucide-react";
+import { LayoutDashboard, KanbanSquare, Table2, FileText, UserPen, Bell, Settings } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { dueReminders } from "@/lib/selectors";
 import { AccountMenu } from "./AccountMenu";
@@ -12,6 +12,9 @@ export const NAV = [
   { href: "/", label: "Board", short: "Board", icon: KanbanSquare },
   { href: "/applications", label: "Applications", short: "Apps", icon: Table2 },
   { href: "/cv", label: "CV Builder", short: "CV", icon: FileText },
+  // Same destination as CV Builder's "Edit profile" link — this is just a
+  // more visible route to it, one click from anywhere instead of two.
+  { href: "/cv/profile", label: "Profile", short: "Profile", icon: UserPen },
   { href: "/reminders", label: "Reminders", short: "Alerts", icon: Bell },
   { href: "/settings", label: "Settings", short: "Settings", icon: Settings },
 ];
