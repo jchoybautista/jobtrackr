@@ -16,7 +16,10 @@ beforeEach(async () => {
 describe("hydrate(scope)", () => {
   it("seeds the demo dataset in the demo sandbox", async () => {
     await useApp.getState().hydrate({ kind: "demo" });
-    expect(useApp.getState().applications.length).toBeGreaterThan(30);
+    // Deliberately modest — the demo is meant to read as a real pipeline,
+    // not bombard every column. See DEFAULT_STAGES coverage in seed.test.ts
+    // for the per-stage shape (2–7 cards, varied).
+    expect(useApp.getState().applications.length).toBeGreaterThan(20);
     expect(useApp.getState().settings.demo).toBe(true);
     expect(currentDb().name).toBe("jobtrackr-demo");
   });

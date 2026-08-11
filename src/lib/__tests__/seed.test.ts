@@ -123,9 +123,12 @@ describe("demo data", () => {
 
   it("stocks every stage, with timelines that stay in order", () => {
     const snap = demoSnapshot(NOW);
+    // Deliberately varied per stage (2–5, capped well under a board that
+    // bombards any single column) rather than a uniform count everywhere.
     for (const stage of DEFAULT_STAGES) {
-      expect(snap.applications.filter((a) => a.stageId === stage.id).length)
-        .toBeGreaterThanOrEqual(3);
+      const count = snap.applications.filter((a) => a.stageId === stage.id).length;
+      expect(count).toBeGreaterThanOrEqual(2);
+      expect(count).toBeLessThanOrEqual(7);
     }
     for (const a of snap.applications) {
       expect(Date.parse(a.createdAt)).toBeLessThanOrEqual(Date.parse(a.updatedAt));
