@@ -116,11 +116,14 @@ describe("Settings account section", () => {
     expect(screen.getByRole("button", { name: /sign out/i })).toBeDefined();
   });
 
-  it("offers an account instead when exploring the demo", () => {
+  it("offers a way out, not a signup pitch, when exploring the demo", () => {
+    // The demo already stands in for an account, so this section's only
+    // action is leaving it — not a second "Create an account" CTA.
     render(<SettingsPage email={null} />);
     const account = screen.getByRole("region", { name: "Account" });
     expect(account.textContent).toMatch(/exploring the demo/i);
     expect(screen.queryByRole("button", { name: /sign out/i })).toBeNull();
-    expect(account.querySelector('a[href="/signup"]')).not.toBeNull();
+    expect(screen.getByRole("button", { name: /exit demo/i })).toBeDefined();
+    expect(account.querySelector('a[href="/signup"]')).toBeNull();
   });
 });

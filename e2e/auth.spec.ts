@@ -14,9 +14,10 @@ test("the demo link opens the app with seeded data and no account", async ({ pag
   await expect(page.getByRole("heading", { name: "Board", exact: true })).toBeVisible();
   // The seeded dataset is there.
   await expect(page.getByText("Stripe").first()).toBeVisible();
-  // And the sidebar offers the way out of demo mode — the only "Create an
-  // account" link on the page since the board banner stopped duplicating it.
-  await expect(page.getByRole("link", { name: /create an account/i })).toBeVisible();
+  // The sidebar offers a way out of demo mode, not a pitch to sign up —
+  // the demo already stands in for an account.
+  await expect(page.getByRole("button", { name: /exit demo/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /create an account/i })).toHaveCount(0);
 });
 
 test("the demo survives a reload", async ({ page }) => {
@@ -52,7 +53,7 @@ test("leaving the demo returns to sign in and stays there", async ({ page }) => 
   // Narrow viewport deliberately: it hides the sidebar, so the account surface
   // under test can only be the one on Settings — the mobile path, which had no
   // sign-out at all until the final review. At desktop width the sidebar's own
-  // link resolves first and this would silently exercise the wrong element.
+  // button resolves first and this would silently exercise the wrong element.
   await page.setViewportSize({ width: 390, height: 844 });
 
   await page.goto("/login");
@@ -62,13 +63,14 @@ test("leaving the demo returns to sign in and stays there", async ({ page }) => 
   await page.goto("/settings");
   const account = page.getByRole("region", { name: "Account" });
   await expect(account).toBeVisible();
-  // Scoped to the section, so this cannot silently resolve to the sidebar's
-  // own account link the way an unscoped locator did.
-  await account.getByRole("link", { name: /create an account/i }).click();
-  await expect(page).toHaveURL(/\/signup$/);
+  // Non-destructive exit: leaves the demo board intact, unlike Clear demo
+  // data below. Scoped to the section so this cannot silently resolve to
+  // the sidebar's own button the way an unscoped locator did.
+  await account.getByRole("button", { name: /exit demo/i }).click();
+  await expect(page).toHaveURL(/\/login$/);
 
-  // Back to the demo, then clear it: the cookie must go with the data.
-  await page.goto("/");
+  // Back into the demo, then clear it: the cookie must go with the data.
+  await page.getByRole("link", { name: /explore the demo/i }).click();
   await page.getByRole("button", { name: /clear demo data/i }).click();
   await expect(page).toHaveURL(/\/login$/);
 

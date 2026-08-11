@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { useSignOut } from "./useSignOut";
 
@@ -13,12 +12,9 @@ export function AccountMenu({ email }: { email: string | null }) {
     return (
       <div className="mt-auto border-t border-line pt-3">
         <p className="hidden px-2 text-sm font-semibold text-ink-2 lg:block">Demo mode</p>
-        <Link href="/signup"
-          className="mt-1 flex min-h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-semibold text-ink underline lg:no-underline">
-          <span className="hidden lg:inline">Create an account</span>
-          <span className="lg:hidden" aria-hidden>+</span>
-          <span className="sr-only lg:hidden">Create an account</span>
-        </Link>
+        {/* No "Create an account" here — the demo already stands in for one:
+            a seeded board, a profile, a CV library. Someone who wants to keep
+            using it for real reaches /signup from the sign-in page instead. */}
         {/* The demo cookie is the only thing standing between a visitor and the
             sign-in page, so the sandbox has to own a way out of itself. */}
         <button type="button" onClick={() => void signOut()}

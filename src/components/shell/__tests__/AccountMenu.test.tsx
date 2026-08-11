@@ -36,10 +36,12 @@ describe("AccountMenu", () => {
     expect(calls).toEqual(["signOut", "resetLocal", "push"]);
   });
 
-  it("says Demo when there is no account", async () => {
+  it("says Demo when there is no account, with no separate signup CTA", async () => {
+    // The demo already stands in for an account — a seeded board, a profile,
+    // a CV library — so it doesn't also pitch creating one.
     render(<AccountMenu email={null} />);
     expect(await screen.findByText("Demo mode")).toBeDefined();
-    expect(screen.getByRole("link", { name: /create an account/i }).getAttribute("href")).toBe("/signup");
+    expect(screen.queryByRole("link", { name: /create an account/i })).toBeNull();
   });
 
   it("lets a demo visitor leave and land back on sign-in", async () => {

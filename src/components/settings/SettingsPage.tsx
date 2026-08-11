@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
 import { Download, LogOut, Moon, Trash2 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { toCsv } from "@/lib/exportio";
@@ -62,16 +61,12 @@ function AccountSection({ email }: { email: string | null }) {
             You&rsquo;re exploring the demo — no account yet.
           </p>
           {/* Below 768px the sidebar is hidden, so this is the only exit a
-              demo visitor can reach. Without it the sandbox is a dead end. */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Button variant="secondary" className="h-11" onClick={() => void signOut()}>
-              <LogOut className="h-4 w-4" aria-hidden /> Exit demo
-            </Button>
-            <Link href="/signup"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-ink px-5 text-base font-semibold text-white hover:opacity-85">
-              Create an account
-            </Link>
-          </div>
+              demo visitor can reach. No "Create an account" beside it — the
+              demo already stands in for one, and /signup is one tap away
+              from the sign-in page once they've left. */}
+          <Button variant="secondary" className="h-11" onClick={() => void signOut()}>
+            <LogOut className="h-4 w-4" aria-hidden /> Exit demo
+          </Button>
         </div>
       )}
     </section>
